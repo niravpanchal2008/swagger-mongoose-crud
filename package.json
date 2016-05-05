@@ -1,0 +1,17 @@
+{
+  "name": "swagger-mongoose-crud",
+  "version": "1.0.0",
+  "description": "Swagger Mongoose crud wrapper",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mongoose",
+    "crud",
+    "mongodb",
+    "swagger-node"
+  ],
+  "author": "Abilash Mohan <abilash@capiot.com>",
+  "license": "MIT"
+}
