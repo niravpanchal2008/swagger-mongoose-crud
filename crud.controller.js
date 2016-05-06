@@ -2,7 +2,7 @@
 
 var _ = require('lodash');
 var BaseController = require('./base.controller');
-var params = require('./param.controller.js');
+var params = require('./swagger.params.map');
 
 
 
@@ -159,7 +159,7 @@ CrudController.prototype = {
                 return this.NotFound();
             }
 
-            return res.ok(self.getResponseObject(document));
+            return self.Okay(self.getResponseObject(document));
         });
     },
 
@@ -175,10 +175,10 @@ CrudController.prototype = {
         var body = params.map(req);
         this.model.create(body, function (err, document) {
             if (err) {
-                return this.Error(res,err);
+                return self.Error(res,err);
             }
 
-            return res.created(self.getResponseObject(document));
+            return self.Okay(res,self.getResponseObject(document));
         });
     },
 
@@ -201,20 +201,20 @@ CrudController.prototype = {
 
         this.model.findOne({ '_id': body[this.idName] }, function (err, document) {
             if (err) {
-                return res.handleError(err);
+                return self.Error(res,err);
             }
 
             if (!document) {
-                return res.notFound();
+                return self.NotFound(res);
             }
 
             var updated = _.merge(document, bodyData);
             updated.save(function (err) {
                 if (err) {
-                    return res.handleError(err);
+                    return self.Error(err);
                 }
 
-                return res.ok(self.getResponseObject(document));
+                return self.Okay(res,self.getResponseObject(document));
             });
         });
     },
@@ -231,19 +231,19 @@ CrudController.prototype = {
         var reqParams = params.map(req);
         this.model.findOne({ '_id': reqParams[this.idName] }, function (err, document) {
             if (err) {
-                return res.handleError(err);
+                return self.Error(res,err);
             }
 
             if (!document) {
-                return res.notFound();
+                return self.NotFound(res);
             }
 
             document.remove(function (err) {
                 if (err) {
-                    return res.handleError(err);
+                    return self.Error(res,err);
                 }
 
-                return res.noContent();
+                return self.Okay(res,{});
             });
         });
     },
