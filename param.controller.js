@@ -33,7 +33,7 @@ function ParamController(model, idName, paramName, router) {
     }
 
     // call super constructor
-    CrudController.call(this, model, idName);
+    CrudController.call(this, model);
     // only set param if it is set, will default to 'id'
     if (!paramName) {
         paramName = modelName + 'Param';

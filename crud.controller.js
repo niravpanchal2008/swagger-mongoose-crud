@@ -118,6 +118,7 @@ CrudController.prototype = {
      */
     _index: function (req, res) {
         var query = params.map(req);
+        var self = this;
         if (this.omit.length) {
             query = _.omit(query, this.omit);
         }
@@ -134,9 +135,9 @@ CrudController.prototype = {
 
         query.exec(function (err, documents) {
             if (err) {
-                return this.Error(err);
+                return self.Error(res,err);
             }
-            return this.Okay(documents);
+            return self.Okay(res,documents);
         });
     },
 
@@ -152,14 +153,14 @@ CrudController.prototype = {
         var reqParams = params.map(req);
         this.model.findOne({ '_id': reqParams[this.idName] }, function (err, document) {
             if (err) {
-                return res.handleError(res,err);
+                return self.Error(res,err);
             }
 
             if (!document) {
-                return this.NotFound();
+                return self.NotFound(res);
             }
 
-            return self.Okay(self.getResponseObject(document));
+            return self.Okay(res,self.getResponseObject(document));
         });
     },
 
@@ -229,6 +230,7 @@ CrudController.prototype = {
      */
     _destroy: function (req, res) {
         var reqParams = params.map(req);
+        var self = this;
         this.model.findOne({ '_id': reqParams[this.idName] }, function (err, document) {
             if (err) {
                 return self.Error(res,err);
