@@ -2,6 +2,8 @@
 var mongoose = require('mongoose');
 var ParamController = require('./param.controller');
 var _ = require('lodash');
+var log4js = require('log4js');
+var logger = log4js.getLogger('swagger-mongoose-crud');
 
 /**
  * Constructor function for MongooseModel
@@ -21,6 +23,8 @@ function MongooseModel(schema,collection) {
     this.show = this._show.bind(this);
     this.update = this._update.bind(this);
     this.destroy = this._destroy.bind(this);
+    this.rucc = this._rucc.bind(this);
+    logger.trace("Initialised Mongoose Model");
 }
 
 MongooseModel.prototype = {

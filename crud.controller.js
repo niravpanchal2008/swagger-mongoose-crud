@@ -250,6 +250,43 @@ CrudController.prototype = {
         });
     },
 
+    _rucc: function (queryObject, callBack) {
+        //rucc = Read Update Check Commit
+        var self = this;
+        return this.model.findOne({ _id: queryObject['id'] }).exec().then(result => {
+            if (result) {
+                var snapshot = result.toObject({ getters: false, virtuals: false, depopulate: true, });
+                var newResult = callBack(result);
+                if (newResult && typeof newResult.then === 'function') {
+                    //newResult is a promise, resolve it and then update.
+                    return newResult.then(res => { self.model.findOneAndUpdate(snapshot, res, { upsert: false, runValidators: true }) })
+                        .exec()
+                        .then(updated => {
+                            if (!updated) {
+                                self.__rucc(queryObject, callBack); //Re-do the transaction.
+                            } else {
+                                return updated;
+                            }
+                        });
+                } else {
+                    //newResult is a mongoose object
+                    return self.model.findOneAndUpdate(snapshot, newResult, { upsert: false, runValidators: true })
+                        .exec()
+                        .then(updated => {
+                            if (!updated) {
+                                self.___rucc(queryObject, callBack);
+                            } else {
+                                return updated;
+                            }
+                        });
+                }
+            } else {
+                return null;
+            }
+
+        });
+    },
+    
     getResponseObject: function (obj) {
         return this.defaultReturn && obj[this.defaultReturn] || obj;
     }
