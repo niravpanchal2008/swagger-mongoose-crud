@@ -109,6 +109,21 @@ CrudController.prototype = {
         res.status(400).send();  
     },
     /**
+     * Get a count of results matching a particular filter criteria.
+     * @param {IncomingMessage} req - The request message object
+     * @param {ServerResponse} res - The outgoing response object the result is set to
+     */
+    _count: function (req, res) {
+        var self = this;
+        var reqParams = params.map(req);
+        var filter = reqParams['filter'] ? reqParams.filter : {};
+        if (this.omit.length > 0) {
+            filter = _.omit(filter, this.omit);
+        }  
+        this.model.find(filter).count().exec().then(result => self.Okay(res,result),
+        err => self.Error(res,err));
+    },
+    /**
      * Get a list of documents. If a request query is passed it is used as the
      * query object for the find method.
      * @param {IncomingMessage} req - The request message object
@@ -117,22 +132,25 @@ CrudController.prototype = {
      * or the empty Array if no documents have been found
      */
     _index: function (req, res) {
-        var query = params.map(req);
+        var reqParams = params.map(req);
+        var filter = reqParams['filter'];
+        var page = reqParams['page'] ? reqParams.page : 1;
+        var count = reqParams['count'] ? reqParams.count : 10;
+        var skip = count * (page - 1);
         var self = this;
         if (this.omit.length) {
-            query = _.omit(query, this.omit);
+            filter = _.omit(filter, this.omit);
         }
-
-        query = this.model.find(query);
-
+        var query = this.model.find(filter);
+        
         if (this.lean) {
             query.lean();
         }
 
         if (this.select.length) {
-            query.select(this.select.join(' '));
+            query.select(this.select.join(','));
         }
-
+        query.skip(skip).limit(count);
         query.exec(function (err, documents) {
             if (err) {
                 return self.Error(res,err);
@@ -151,17 +169,19 @@ CrudController.prototype = {
     _show: function (req, res) {
         var self = this;
         var reqParams = params.map(req);
-        this.model.findOne({ '_id': reqParams[this.idName] }, function (err, document) {
-            if (err) {
-                return self.Error(res,err);
-            }
-
+        var filter = reqParams['fields'];
+        
+        var query = this.model.findOne({ '_id': reqParams[this.idName] });
+        if (filter) {
+            query = query.select(filter);
+        }
+        query.exec().then((document) => {
             if (!document) {
                 return self.NotFound(res);
+            } else {
+                return self.Okay(res, self.getResponseObject(document));    
             }
-
-            return self.Okay(res,self.getResponseObject(document));
-        });
+        }, err => self.Error(res, err));
     },
 
     /**
@@ -170,10 +190,11 @@ CrudController.prototype = {
      * @param {ServerResponse} res - The outgoing response object
      * @returns {ServerResponse} The response status 201 CREATED or an error response
      */
-    _create: function (req, res) {
+    _create: function (req, res, inBody) {
         var self = this;
         //new this.model(req.body).save(function(Err,document){
-        var body = params.map(req);
+        var payload = inBody ? inBody : 'data';
+        var body = params.map(req)[payload];
         this.model.create(body, function (err, document) {
             if (err) {
                 return self.Error(res,err);
@@ -188,10 +209,15 @@ CrudController.prototype = {
      * request parameters by using the {@link CrudController#idName} property.
      * @param {IncomingMessage} req - The request message object the id is read from
      * @param {ServerResponse} res - The outgoing response object
+     * @params {String} in -  The Body payload location, if not specified, the parameter is assumed to be 'body'
      * @returns {ServerResponse} The updated document or NOT FOUND if no document has been found
      */
-    _update: function (req, res) {
-        var body = params.map(req);
+    _update: function (req, res, bodyIn) {
+        var reqParams = params.map(req);
+        if (!bodyIn) {
+            bodyIn = 'data';
+        }
+        var body = reqParams[bodyIn];
   
         if (body._id) {
             delete req.body._id;
