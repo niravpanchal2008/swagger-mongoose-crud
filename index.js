@@ -24,7 +24,8 @@ function MongooseModel(schema,collection) {
     this.update = this._update.bind(this);
     this.destroy = this._destroy.bind(this);
     this.rucc = this._rucc.bind(this);
-    logger.trace("Initialised Mongoose Model");
+    this.count = this._count.bind(this);
+    logger.trace('Initialised Mongoose Model');
 }
 
 MongooseModel.prototype = {

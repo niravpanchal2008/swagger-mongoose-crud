@@ -1,6 +1,6 @@
 {
   "name": "swagger-mongoose-crud",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Swagger Mongoose crud wrapper",
   "main": "index.js",
   "scripts": {
@@ -15,6 +15,7 @@
   "author": "Abilash Mohan <abilash@capiot.com>",
   "license": "MIT",
   "dependencies": {
+    "gulp": "^3.9.1",
     "lodash": "^4.11.2",
     "log4js": "^0.6.36",
     "mongoose": "^4.4.14"
