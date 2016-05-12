@@ -190,10 +190,10 @@ CrudController.prototype = {
      * @param {ServerResponse} res - The outgoing response object
      * @returns {ServerResponse} The response status 201 CREATED or an error response
      */
-    _create: function (req, res, inBody) {
+    _create: function (req, res) {
         var self = this;
         //new this.model(req.body).save(function(Err,document){
-        var payload = inBody ? inBody : 'data';
+        var payload = 'data';
         var body = params.map(req)[payload];
         this.model.create(body, function (err, document) {
             if (err) {
@@ -212,11 +212,9 @@ CrudController.prototype = {
      * @params {String} in -  The Body payload location, if not specified, the parameter is assumed to be 'body'
      * @returns {ServerResponse} The updated document or NOT FOUND if no document has been found
      */
-    _update: function (req, res, bodyIn) {
+    _update: function (req, res) {
         var reqParams = params.map(req);
-        if (!bodyIn) {
-            bodyIn = 'data';
-        }
+        var bodyIn = 'data';
         var body = reqParams[bodyIn];
   
         if (body._id) {

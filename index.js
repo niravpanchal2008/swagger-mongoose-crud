@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 var mongoose = require('mongoose');
 var ParamController = require('./param.controller');
 var _ = require('lodash');
