@@ -1,6 +1,6 @@
 {
   "name": "swagger-mongoose-crud",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Swagger Mongoose crud wrapper",
   "main": "index.js",
   "scripts": {

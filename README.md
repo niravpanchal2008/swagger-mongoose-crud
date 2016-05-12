@@ -39,6 +39,9 @@ exports.destroy = crud.destroy;
 //Will show a single entity, takes 'id'
 exports.show = crud.show;
 
+//Will count the number of entries in the DB, Supports filter options.
+exports.count = crud.count;
+
 //crud.model will hold the Mongoose Model.
 //crud.schema will hold the schema passed on at constructor
 crud.select = [ 
@@ -49,6 +52,7 @@ crud.omit = [
     //list of the fields to disallow for Index search
 ];
 
+module.exports = exports;
 ```
 
 **Note : Still under active development, Not ready for primetime use**
