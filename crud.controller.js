@@ -224,7 +224,7 @@ CrudController.prototype = {
         var self = this;
         var bodyData = _.omit(body, this.omit);
 
-        this.model.findOne({ '_id': body[this.idName] }, function (err, document) {
+        this.model.findOne({ '_id': reqParams[this.idName] }, function (err, document) {
             if (err) {
                 return self.Error(res,err);
             }
