@@ -17,23 +17,15 @@ var CrudController = require('./crud.controller');
  * defaults to the lowercase model name with 'Id' appended.
  * @param {String} [paramName] - The name of the request property to use,
  * defaults to the lowercase model name with 'Param' appended.
- * @param {Object} router - The express router to attach the param function to
+ * @param {Object} logger - logger instance
  */
-function ParamController(model, idName, paramName, router) {
+function ParamController(model, idName, logger) {
     var modelName = model.modelName.toLowerCase();
-    // make idName and paramName arguments optional (v0.1.1)
-    if (typeof idName === 'function') {
-        router = idName;
-        idName = modelName + 'Id';
-    }
-
-    if (typeof paramName === 'function') {
-        router = paramName;
-        paramName = modelName + 'Param';
-    }
+   
+    var paramName = modelName + 'Param';
 
     // call super constructor
-    CrudController.call(this, model);
+    CrudController.call(this, model,logger);
     // only set param if it is set, will default to 'id'
     if (!paramName) {
         paramName = modelName + 'Param';
@@ -41,6 +33,7 @@ function ParamController(model, idName, paramName, router) {
 
     this.paramName = String(paramName);
     this.paramString = ':' + this.paramName;
+    this.logger = logger;
 
     // register param name route parameter
     // if (typeof router === 'function') {
@@ -55,7 +48,6 @@ var ParamPrototype = {
      * @private
      */
     constructor: ParamController,
-
     /**
      * The route parameter name
      * @default

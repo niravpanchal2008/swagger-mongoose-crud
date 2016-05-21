@@ -15,13 +15,13 @@ var params = require('./swagger.params.map');
  * @param {Model} model - The mongoose model to operate on
  * @param {String} [idName] - The name of the id request parameter to use
  */
-function CrudController(model, idName) {
+function CrudController(model, idName,logger) {
     // call super constructor
     BaseController.call(this, this);
 
     // set the model instance to work on
     this.model = model;
-
+    this.logger = logger;
     // set id name if defined, defaults to 'id'
     if (idName) {
         this.idName = String(idName);
@@ -133,11 +133,21 @@ CrudController.prototype = {
      */
     _index: function (req, res) {
         var reqParams = params.map(req);
-        var filter = reqParams['filter'];
+        var filter = reqParams['filter'] ? reqParams.filter : {};
+        var select = reqParams['select'] ? reqParams.select.split(',') : [];
         var page = reqParams['page'] ? reqParams.page : 1;
         var count = reqParams['count'] ? reqParams.count : 10;
         var skip = count * (page - 1);
         var self = this;
+        if (typeof filter === 'string') {
+            try {
+                filter = JSON.parse(filter);
+            } catch (err) {
+                this.logger.error('Failed to parse filter :' + err.message);
+                filter = {};
+            }
+        }
+
         if (this.omit.length) {
             filter = _.omit(filter, this.omit);
         }
@@ -147,8 +157,9 @@ CrudController.prototype = {
             query.lean();
         }
 
-        if (this.select.length) {
-            query.select(this.select.join(','));
+        if (this.select.length || select.length) {
+            var union = this.select.concat(select);
+            query.select(union.join(','));
         }
         query.skip(skip).limit(count);
         query.exec(function (err, documents) {
@@ -169,11 +180,11 @@ CrudController.prototype = {
     _show: function (req, res) {
         var self = this;
         var reqParams = params.map(req);
-        var filter = reqParams['fields'];
+        var select = reqParams['fields']; //Comma seprated fileds list
         
         var query = this.model.findOne({ '_id': reqParams[this.idName] });
-        if (filter) {
-            query = query.select(filter);
+        if (select) {
+            query = query.select(select);
         }
         query.exec().then((document) => {
             if (!document) {
