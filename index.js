@@ -17,7 +17,7 @@ var logger = log4js.getLogger('swagger-mongoose-crud');
 function MongooseModel(schema,collection) {
     this.schema = schema;
     this.model = mongoose.model(collection, this.schema);
-    ParamController.call(this, this.model, this.model.modelName);
+    ParamController.call(this, this.model, this.model.modelName,logger);
     this.index = this._index.bind(this);
     this.create = this._create.bind(this);
     this.show = this._show.bind(this);
