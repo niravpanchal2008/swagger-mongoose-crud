@@ -143,7 +143,7 @@ CrudController.prototype = {
             try {
                 filter = JSON.parse(filter);
             } catch (err) {
-                this.logger.error('Failed to parse filter :' + err.message);
+                this.logger.error('Failed to parse filter :' + err);
                 filter = {};
             }
         }
@@ -159,7 +159,7 @@ CrudController.prototype = {
 
         if (this.select.length || select.length) {
             var union = this.select.concat(select);
-            query.select(union.join(','));
+            query.select(union.join(' '));
         }
         query.skip(skip).limit(count);
         query.exec(function (err, documents) {
@@ -180,11 +180,10 @@ CrudController.prototype = {
     _show: function (req, res) {
         var self = this;
         var reqParams = params.map(req);
-        var select = reqParams['fields']; //Comma seprated fileds list
-        
-        var query = this.model.findOne({ '_id': reqParams[this.idName] });
-        if (select) {
-            query = query.select(select);
+        var select = reqParams['select']? reqParams.select.split(',') : []; //Comma seprated fileds list
+        var query = this.model.findOne({ '_id': reqParams['id'] });
+        if (select.length > 0) {
+            query = query.select(select.join(' '));
         }
         query.exec().then((document) => {
             if (!document) {
