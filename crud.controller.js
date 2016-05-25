@@ -15,7 +15,7 @@ var params = require('./swagger.params.map');
  * @param {Model} model - The mongoose model to operate on
  * @param {String} [idName] - The name of the id request parameter to use
  */
-function CrudController(model, idName,logger) {
+function CrudController(model,logger) {
     // call super constructor
     BaseController.call(this, this);
 
@@ -23,9 +23,6 @@ function CrudController(model, idName,logger) {
     this.model = model;
     this.logger = logger;
     // set id name if defined, defaults to 'id'
-    if (idName) {
-        this.idName = String(idName);
-    }
     this.omit = [];
     _.bindAll(this);
 }
@@ -216,14 +213,14 @@ CrudController.prototype = {
     _bulkShow: function (req, res) {
         var reqParams = params.map(req);
         var ids = reqParams['id'].split(',');
-        var select = reqParams['select'] ? reqParams.select : null;
+        var select = reqParams['select'] ? reqParams.select.split(',') : null;
         var query = {
             '_id': { '$in': ids }
         };
         var self = this;
         var mq = this.model.find(query);
         if (select) {
-            mq = mq.select(select);
+            mq = mq.select(select.join(' '));
         }
         return mq.exec().then(result => self.Okay(res, result), err => this.Error(res, err));
     },
@@ -260,7 +257,7 @@ CrudController.prototype = {
         var self = this;
         var bodyData = _.omit(body, this.omit);
 
-        this.model.findOne({ '_id': reqParams[this.idName] }, function (err, document) {
+        this.model.findOne({ '_id': reqParams['id'] }, function (err, document) {
             if (err) {
                 return self.Error(res,err);
             }
