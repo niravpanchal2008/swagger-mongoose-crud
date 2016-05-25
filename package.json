@@ -4,7 +4,7 @@
   "description": "Swagger Mongoose crud wrapper",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha test"
   },
   "keywords": [
     "mongoose",
@@ -19,5 +19,9 @@
     "lodash": "^4.11.2",
     "log4js": "^0.6.36",
     "mongoose": "^4.4.14"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^2.5.3"
   }
 }
