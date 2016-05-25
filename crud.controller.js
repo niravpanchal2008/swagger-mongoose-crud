@@ -291,7 +291,7 @@ CrudController.prototype = {
     _destroy: function (req, res) {
         var reqParams = params.map(req);
         var self = this;
-        this.model.findOne({ '_id': reqParams[this.idName] }, function (err, document) {
+        this.model.findOne({ '_id': reqParams['id'] }, function (err, document) {
             if (err) {
                 return self.Error(res,err);
             }
