@@ -213,7 +213,33 @@ CrudController.prototype = {
             return self.Okay(res,self.getResponseObject(document));
         });
     },
-
+    _bulkShow: function (req, res) {
+        var reqParams = params.map(req);
+        var ids = reqParams['id'].split(',');
+        var select = reqParams['select'] ? reqParams.select : null;
+        var query = {
+            '_id': { '$in': ids }
+        };
+        var self = this;
+        var mq = this.model.find(query);
+        if (select) {
+            mq = mq.select(select);
+        }
+        return mq.exec().then(result => self.Okay(res, result), err => this.Error(res, err));
+    },
+    _bulkUpdate: function (req,res) {
+        var reqParams = params.map(req);
+        var body = reqParams['data']; //Actual transformation
+        var selectFields = Object.keys(body);
+        var self = this;
+        selectFields.push('_id');
+        var ids = reqParams['id'].split(','); //Ids will be comma seperated ID list
+        var promises = ids.map(id => this.model.findOneAndUpdate({ '_id': id }, body, { 'new': true }).select(body).exec());
+        var promise = Promise.all(promises).then(result => res.json(result), err => {
+            self.Error(res, err);
+        });
+        return promise;
+    },
     /**
      * Updates an existing document in the DB. The requested document id is read from the
      * request parameters by using the {@link CrudController#idName} property.
