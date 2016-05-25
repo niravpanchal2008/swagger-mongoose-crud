@@ -1,4 +1,5 @@
 # swagger-mongoose-crud
+[![Build][travis-image]][travis-url]
 
 A Simple wrapper for Swagger based mongoose CRUD operation. This plugin is a modfied version of the Mongoose CRUD operation introducted by [Micheal Krone](https://github.com/michaelkrone,Github Profile).
 This module exposes following basic operations.
