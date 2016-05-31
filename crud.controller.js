@@ -97,6 +97,65 @@ CrudController.prototype = {
     NotFound: function (res) {
         res.status(404).send();  
     },
+    IsString: function(val){
+        return val.constructor.name === 'String';
+    },
+    CreateRegexp: function(str){
+        if(str.charAt(0)==='/' && 
+            str.charAt(str.length-1)==='/'){
+                    //console.log("Regex Created");
+            return new RegExp(str.substr(1,str.length-2));
+        }
+        else{
+            return str;  
+        }
+    },
+    IsArray: function(arg) {
+        return arg.constructor.name === 'Array'; 
+    },
+    IsObject: function(arg) {
+        return arg.constructor.name === 'Object'; 
+    },
+    ResolveArray:   function(arr){
+        var self = this;
+        //console.log("Resolving array");
+        for(var x =0;x<arr.length;x++){
+            if(self.IsObject(arr[x])){
+                arr[x] = self.FilterParse(arr[x]);
+            }
+            else if(self.IsArray(arr[x])){
+                arr[x] = self.ResolveArray(arr[x]);
+            }
+            else if(self.IsString(arr[x])){
+                arr[x] = self.CreateRegexp(arr[x]);
+            }
+        }
+        return arr;
+    },
+    /*
+     * Takes the filter field and parses it to a JSON object
+     * @type {function}
+     *  
+     */ 
+    FilterParse: function(filterParsed){
+        var self = this;
+        for(var key in filterParsed){
+            //console.log(key+" "+ filterParsed[key]);
+            if(self.IsString(filterParsed[key])){
+                //console.log("string");
+                filterParsed[key] = self.CreateRegexp(filterParsed[key]);
+            }
+            else if(self.IsArray(filterParsed[key])){
+                //console.log("array");
+                filterParsed[key] = self.ResolveArray(filterParsed[key]);
+            }
+            else if(self.IsObject(filterParsed[key])){
+                filterParsed[key] = self.FilterParse(filterParsed[key]);
+                //console.log("In Object");
+            }
+        }
+        return filterParsed;
+    },
     /**
      * Default Data handlers for Okay Response
      * @type {function}
@@ -139,6 +198,8 @@ CrudController.prototype = {
         if (typeof filter === 'string') {
             try {
                 filter = JSON.parse(filter);
+                filter = self.FilterParse(filter);
+                //console.log(filter.csa[0]);
             } catch (err) {
                 this.logger.error('Failed to parse filter :' + err);
                 filter = {};
