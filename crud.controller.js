@@ -104,7 +104,7 @@ CrudController.prototype = {
         if(str.charAt(0)==='/' && 
             str.charAt(str.length-1)==='/'){
                     //console.log("Regex Created");
-            return new RegExp(str.substr(1,str.length-2));
+            return new RegExp(str.substr(1,str.length-2),'i');
         }
         else{
             return str;  
@@ -328,11 +328,10 @@ CrudController.prototype = {
             }
 
             var updated = _.merge(document, bodyData);
-            updated.save(function (err) {
+            this.model.create(updated, function (err, document) {
                 if (err) {
-                    return self.Error(err);
+                    return self.Error(res,err);
                 }
-
                 return self.Okay(res,self.getResponseObject(document));
             });
         });
