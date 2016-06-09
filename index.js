@@ -3,7 +3,12 @@ var mongoose = require('mongoose');
 var ParamController = require('./param.controller');
 var _ = require('lodash');
 var log4js = require('log4js');
-var logger = log4js.getLogger('swagger-mongoose-crud');
+if(process.env.PROD_ENV){
+    var logger = log4js.getLogger("swagger-mongoose-crud");   
+} 
+else{
+    var logger = log4js.getLogger("swagger-mongoose-crud-dev");   
+}
 
 /**
  * Constructor function for MongooseModel
