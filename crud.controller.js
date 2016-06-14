@@ -161,7 +161,8 @@ CrudController.prototype = {
      * @type {function}
      * @default Okay response.
      */
-    Error: function (res,err) {
+    Error: function (res, err) {
+        this.logger.error(err.message, err.stack);
         res.status(400).send();  
     },
     /**
@@ -173,6 +174,15 @@ CrudController.prototype = {
         var self = this;
         var reqParams = params.map(req);
         var filter = reqParams['filter'] ? reqParams.filter : {};
+        if (typeof filter === 'string') {
+            try {
+                filter = JSON.parse(filter);
+                filter = self.FilterParse(filter);
+            } catch (err) {
+                this.logger.error('Failed to parse filter :' + err);
+                filter = {};
+            }
+        }
         if (this.omit.length > 0) {
             filter = _.omit(filter, this.omit);
         }  
@@ -199,7 +209,6 @@ CrudController.prototype = {
             try {
                 filter = JSON.parse(filter);
                 filter = self.FilterParse(filter);
-                //console.log(filter.csa[0]);
             } catch (err) {
                 this.logger.error('Failed to parse filter :' + err);
                 filter = {};
