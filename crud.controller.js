@@ -325,24 +325,18 @@ CrudController.prototype = {
         }
 
         var self = this;
-        var bodyData = _.omit(body, this.omit);
-
-        this.model.findOne({ '_id': reqParams['id'] }, function (err, document) {
+        var bodyData = _.omit(body, this.omit);    
+        this.model.findOneAndUpdate({_id: reqParams['id']}, {$set:bodyData}, {new: true}, function(err, doc){
             if (err) {
                 return self.Error(res,err);
             }
-
-            if (!document) {
+            if (!doc) {
                 return self.NotFound(res);
             }
-
-            var updated = _.merge(document, bodyData);
-            this.model.create(updated, function (err, document) {
-                if (err) {
-                    return self.Error(res,err);
-                }
-                return self.Okay(res,self.getResponseObject(document));
-            });
+            if(err){
+                logger.log("Something wrong when updating data!");
+            }
+            return self.Okay(res,self.getResponseObject(doc));
         });
     },
 
