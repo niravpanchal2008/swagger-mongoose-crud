@@ -161,8 +161,10 @@ CrudController.prototype = {
      * @type {function}
      * @default Okay response.
      */
-    Error: function (res, err) {
-        this.logger.error(err.message, err.stack);
+    Error: function (res,err) {
+        this.logger.error(err.name);
+        for(var field in err.errors)
+            this.logger.error(err.errors[field].message);
         res.status(400).send();  
     },
     /**
