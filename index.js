@@ -3,8 +3,8 @@ var mongoose = require('mongoose');
 var ParamController = require('./param.controller');
 var _ = require('lodash');
 var log4js = require('log4js');
-var logger = process.env.PROD_ENV?log4js.getLogger("swagger-mongoose-crud"):log4js.getLogger("swagger-mongoose-crud-dev");   
-
+var logger = process.env.PROD_ENV?log4js.getLogger('swagger-mongoose-crud'):log4js.getLogger('swagger-mongoose-crud-dev');   
+var params = require('./swagger.params.map');
 /**
  * Constructor function for MongooseModel
  * @classdesc Basic mongoose Model sytem
@@ -34,7 +34,8 @@ MongooseModel.prototype = {
     constructor: MongooseModel,
     model: null,
     schema: null,
-    definition: null
+    definition: null,
+    swagMapper: params.map
 };
 
 MongooseModel.prototype = _.create(ParamController.prototype,MongooseModel.prototype);
