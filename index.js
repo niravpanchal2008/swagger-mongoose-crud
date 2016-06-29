@@ -5,7 +5,7 @@ var _ = require('lodash');
 var log4js = require('log4js');
 var logger = process.env.PROD_ENV?log4js.getLogger('swagger-mongoose-crud'):log4js.getLogger('swagger-mongoose-crud-dev');   
 var params = require('./swagger.params.map');
-//var uniqueValidator = require('mongoose-unique-validator');
+var uniqueValidator = require('mongoose-unique-validator');
 /**
  * Constructor function for MongooseModel
  * @classdesc Basic mongoose Model sytem
@@ -17,7 +17,7 @@ var params = require('./swagger.params.map');
  */
 function MongooseModel(schema,collection) {
     this.schema = schema;
-    //schema.plugin(uniqueValidator);
+    schema.plugin(uniqueValidator);
     this.model = mongoose.model(collection, this.schema);
     ParamController.call(this, this.model, this.model.modelName,logger);
     this.index = this._index.bind(this);
