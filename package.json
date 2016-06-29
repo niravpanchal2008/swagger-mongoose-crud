@@ -18,7 +18,8 @@
     "gulp": "^3.9.1",
     "lodash": "^4.11.2",
     "log4js": "^0.6.36",
-    "mongoose": "^4.4.14"
+    "mongoose": "^4.5.2",
+    "mongoose-unique-validator": "^1.0.2"
   },
   "devDependencies": {
     "chai": "^3.5.0",
