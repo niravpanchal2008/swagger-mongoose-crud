@@ -296,6 +296,29 @@ CrudController.prototype = {
         }
         return mq.exec().then(result => self.Okay(res, result), err => this.Error(res, err));
     },
+    _updateMapper: function(id,body) {
+        var self = this;
+        return new Promise((resolve,reject)=>{
+            self.model.findOne({ '_id': id },function(err,doc){
+                if(err){
+                    reject(err);
+                }
+                else if(!doc){
+                    reject(new Error("Document not found"));
+                }
+                else{
+                    var updated = _.mergeWith(doc, body,self._customizer); 
+                    updated = new self.model(updated);
+                    updated.save(function (err) {
+                        if (err) {
+                            reject(err);
+                        }
+                        resolve(updated);
+                    });
+                }
+            }).exec();    
+        });    
+    },
     _bulkUpdate: function (req,res) {
         var reqParams = params.map(req);
         var body = reqParams['data']; //Actual transformation
@@ -303,7 +326,7 @@ CrudController.prototype = {
         var self = this;
         selectFields.push('_id');
         var ids = reqParams['id'].split(','); //Ids will be comma seperated ID list
-        var promises = ids.map(id => this.model.findOneAndUpdate({ '_id': id }, body, { 'new': true }).select(body).exec());
+        var promises = ids.map(id => self._updateMapper(id,body));
         var promise = Promise.all(promises).then(result => res.json(result), err => {
             self.Error(res, err);
         });
@@ -321,11 +344,9 @@ CrudController.prototype = {
         var reqParams = params.map(req);
         var bodyIn = 'data';
         var body = reqParams[bodyIn];
-  
         if (body._id) {
             delete req.body._id;
         }
-
         var self = this;
         var bodyData = _.omit(body, this.omit);
 
@@ -337,24 +358,24 @@ CrudController.prototype = {
             if (!document) {
                 return self.NotFound(res);
             }
-
-            var updated = _.merge(document, bodyData,self.customizer);
+            var updated = _.mergeWith(document, bodyData,self._customizer);
+            updated = new self.model(updated);
             updated.save(function (err) {
                 if (err) {
                     return self.Error(err);
                 }
 
-                return self.Okay(res,self.getResponseObject(document));
+                return self.Okay(res,self.getResponseObject(updated));
             });
         });
     },
     
-
     _customizer: function(objValue, srcValue) {
         if (_.isArray(objValue)) {
-            return objValue;
+            return srcValue;
         }
     },
+
 
 
     /**
