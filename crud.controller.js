@@ -327,20 +327,35 @@ CrudController.prototype = {
         }
 
         var self = this;
-        var bodyData = _.omit(body, this.omit);    
-        this.model.findOneAndUpdate({_id: reqParams['id']}, {$set:bodyData}, {new: true}, function(err, doc){
+        var bodyData = _.omit(body, this.omit);
+
+        this.model.findOne({ '_id': reqParams['id'] }, function (err, document) {
             if (err) {
                 return self.Error(res,err);
             }
-            if (!doc) {
+
+            if (!document) {
                 return self.NotFound(res);
             }
-            if(err){
-                logger.log("Something wrong when updating data!");
-            }
-            return self.Okay(res,self.getResponseObject(doc));
+
+            var updated = _.merge(document, bodyData,self.customizer);
+            updated.save(function (err) {
+                if (err) {
+                    return self.Error(err);
+                }
+
+                return self.Okay(res,self.getResponseObject(document));
+            });
         });
     },
+    
+
+    _customizer: function(objValue, srcValue) {
+        if (_.isArray(objValue)) {
+            return objValue;
+        }
+    },
+
 
     /**
      * Deletes a document from the DB. The requested document id is read from the
