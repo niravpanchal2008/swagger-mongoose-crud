@@ -162,10 +162,8 @@ CrudController.prototype = {
      * @default Okay response.
      */
     Error: function (res,err) {
-        this.logger.error(err.name);
-        for(var field in err.errors)
-            this.logger.error(err.errors[field].message);
-        res.status(400).send();  
+        this.logger.error(err);
+        res.status(400).json({ message: err.message });  
     },
     /**
      * Get a count of results matching a particular filter criteria.
@@ -362,7 +360,7 @@ CrudController.prototype = {
             updated = new self.model(updated);
             updated.save(function (err) {
                 if (err) {
-                    return self.Error(err);
+                    return self.Error(res,err);
                 }
 
                 return self.Okay(res,self.getResponseObject(updated));
