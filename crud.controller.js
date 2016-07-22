@@ -80,7 +80,10 @@ CrudController.prototype = {
      * @default The empty String
      */
     defaultReturn: '',
-
+    auditLogger: function (doc,body){
+        var intersection = _.pick(doc,_.keysIn(body));
+        this.logger.audit('Object with id :-' + doc._id + ' has been updated, old values:-'+JSON.stringify(intersection)+' new values:- '+JSON.stringify(body));
+    },
     /**
      * Default Data handlers for Okay Response
      * @type {function}
@@ -276,7 +279,7 @@ CrudController.prototype = {
             if (err) {
                 return self.Error(res,err);
             }
-
+            self.logger.audit('Object with id :-' + document._id + ' has been created');    
             return self.Okay(res,self.getResponseObject(document));
         });
     },
@@ -305,12 +308,14 @@ CrudController.prototype = {
                     reject(new Error("Document not found"));
                 }
                 else{
+                    var oldValues = doc.toObject();
                     var updated = _.mergeWith(doc, body,self._customizer); 
                     updated = new self.model(updated);
                     updated.save(function (err) {
                         if (err) {
                             reject(err);
                         }
+                        self.auditLogger(oldValues,body);
                         resolve(updated);
                     });
                 }
@@ -356,13 +361,14 @@ CrudController.prototype = {
             if (!document) {
                 return self.NotFound(res);
             }
+            var oldValues = document.toObject();
             var updated = _.mergeWith(document, bodyData,self._customizer);
             updated = new self.model(updated);
             updated.save(function (err) {
                 if (err) {
                     return self.Error(res,err);
                 }
-
+                self.auditLogger(oldValues,body);
                 return self.Okay(res,self.getResponseObject(updated));
             });
         });
@@ -400,7 +406,7 @@ CrudController.prototype = {
                 if (err) {
                     return self.Error(res,err);
                 }
-
+                this.logger.audit('Document with id:- '+ reqParams['id'] +' has been deleted');    
                 return self.Okay(res,{});
             });
         });

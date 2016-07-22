@@ -15,8 +15,9 @@ var uniqueValidator = require('mongoose-unique-validator');
  * @param {Object} schema  - Schema for mongoose object.
  * @param {String} collection - Collection to which data needs to be populated.
  */
-function MongooseModel(schema,collection) {
+function MongooseModel(schema,collection,_logger) {
     this.schema = schema;
+    logger = _logger?_logger:logger;
     schema.plugin(uniqueValidator);
     this.model = mongoose.model(collection, this.schema);
     ParamController.call(this, this.model, this.model.modelName,logger);
