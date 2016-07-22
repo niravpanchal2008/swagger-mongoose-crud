@@ -3,6 +3,7 @@ var mongoose = require('mongoose');
 var ParamController = require('./param.controller');
 var _ = require('lodash');
 var log4js = require('log4js');
+log4js.levels.forName('AUDIT',50001);
 var logger = process.env.PROD_ENV?log4js.getLogger('swagger-mongoose-crud'):log4js.getLogger('swagger-mongoose-crud-dev');   
 var params = require('./swagger.params.map');
 var uniqueValidator = require('mongoose-unique-validator');
