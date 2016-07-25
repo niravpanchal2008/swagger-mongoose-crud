@@ -406,7 +406,7 @@ CrudController.prototype = {
                 if (err) {
                     return self.Error(res,err);
                 }
-                this.logger.audit('Document with id:- '+ reqParams['id'] +' has been deleted');    
+                self.logger.audit('Document with id:- '+ reqParams['id'] +' has been deleted');    
                 return self.Okay(res,{});
             });
         });
