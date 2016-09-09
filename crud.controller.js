@@ -188,7 +188,8 @@ CrudController.prototype = {
         }
         if (this.omit.length > 0) {
             filter = _.omit(filter, this.omit);
-        }  
+        }
+        filter.deleted = false;  
         this.model.find(filter).count().exec().then(result => self.Okay(res,result),
         err => self.Error(res,err));
     },
@@ -221,6 +222,7 @@ CrudController.prototype = {
         if (this.omit.length) {
             filter = _.omit(filter, this.omit);
         }
+        filter.deleted = false;
         var query = this.model.find(filter);
         
         if (this.lean) {
@@ -251,7 +253,7 @@ CrudController.prototype = {
         var self = this;
         var reqParams = params.map(req);
         var select = reqParams['select']? reqParams.select.split(',') : []; //Comma seprated fileds list
-        var query = this.model.findOne({ '_id': reqParams['id'] });
+        var query = this.model.findOne({ '_id': reqParams['id'], deleted: false });
         if (select.length > 0) {
             query = query.select(select.join(' '));
         }
@@ -288,7 +290,8 @@ CrudController.prototype = {
         var ids = reqParams['id'].split(',');
         var select = reqParams['select'] ? reqParams.select.split(',') : null;
         var query = {
-            '_id': { '$in': ids }
+            '_id': { '$in': ids },
+            "deleted": false
         };
         var self = this;
         var mq = this.model.find(query);
@@ -300,7 +303,7 @@ CrudController.prototype = {
     _updateMapper: function(id,body) {
         var self = this;
         return new Promise((resolve,reject)=>{
-            self.model.findOne({ '_id': id },function(err,doc){
+            self.model.findOne({ '_id': id, deleted : false },function(err,doc){
                 if(err){
                     reject(err);
                 }
@@ -353,7 +356,7 @@ CrudController.prototype = {
         var self = this;
         var bodyData = _.omit(body, this.omit);
 
-        this.model.findOne({ '_id': reqParams['id'] }, function (err, document) {
+        this.model.findOne({ '_id': reqParams['id'], deleted : false  }, function (err, document) {
             if (err) {
                 return self.Error(res,err);
             }
@@ -412,10 +415,32 @@ CrudController.prototype = {
         });
     },
 
+    _markAsDeleted: function (req, res) {
+        var reqParams = params.map(req);
+        var self = this;
+        this.model.findOne({ '_id': reqParams['id'], deleted:false }, function (err, document) {
+            if (err) {
+                return self.Error(res,err);
+            }
+
+            if (!document) {
+                return self.NotFound(res);
+            }
+            document.deleted = true;    
+            document.save(function (err) {
+                if (err) {
+                    return self.Error(res,err);
+                }
+                self.logger.audit('Document with id:- '+ reqParams['id'] +' has been marked as deleted');    
+                return self.Okay(res,{});
+            });
+        });
+    },
+
     _rucc: function (queryObject, callBack) {
         //rucc = Read Update Check Commit
         var self = this;
-        return this.model.findOne({ _id: queryObject['id'] }).exec().then(result => {
+        return this.model.findOne({ _id: queryObject['id'],  deleted:false }).exec().then(result => {
             if (result) {
                 var snapshot = result.toObject({ getters: false, virtuals: false, depopulate: true, });
                 var newResult = callBack(result);
