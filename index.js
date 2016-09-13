@@ -30,6 +30,7 @@ function MongooseModel(schema,collection,_logger) {
     this.rucc = this._rucc.bind(this);
     this.count = this._count.bind(this);
     this.bulkUpdate = this._bulkUpdate.bind(this);
+    this.bulkUpload = this._bulkUpload.bind(this);
     this.bulkShow = this._bulkShow.bind(this);
     this.markAsDeleted = this._markAsDeleted.bind(this);
     logger.trace('Initialised Mongoose Model');

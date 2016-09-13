@@ -338,6 +338,36 @@ CrudController.prototype = {
         });
         return promise;
     },
+    _bulkUpload: function (req,res){
+        try{
+            let buffer = req.files.file[0].buffer.toString("utf8");
+            let rows = buffer.split("\n");
+            let keys = rows[0].split(",");
+            let products = [];
+            let self = this;
+            rows.splice(0,1);
+            rows.forEach(el => {
+                let values = el.split(",");
+                values.length>1?products.push(_.zipObject(keys,values)):null;
+            });
+            Promise.all(products.map(el => self._bulkPersist(el))).
+            then(result => res.status(200).json(result));
+        }
+        catch(e){
+            res.status(400).json(e);
+        }
+    },
+    _bulkPersist: function (el){
+        var self = this;
+        return new Promise((res,rej)=>{
+            self.model.create(el, function(err,doc){
+                if(err)
+                    res(err);
+                else
+                    res(doc);    
+            });
+        });
+    },
     /**
      * Updates an existing document in the DB. The requested document id is read from the
      * request parameters by using the {@link CrudController#idName} property.
