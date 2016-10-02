@@ -106,7 +106,7 @@ CrudController.prototype = {
     CreateRegexp: function(str){
         if(str.charAt(0)==='/' && 
             str.charAt(str.length-1)==='/'){
-                    //console.log("Regex Created");
+                    //console.log('Regex Created');
             return new RegExp(str.substr(1,str.length-2),'i');
         }
         else{
@@ -121,7 +121,7 @@ CrudController.prototype = {
     },
     ResolveArray:   function(arr){
         var self = this;
-        //console.log("Resolving array");
+        //console.log('Resolving array');
         for(var x =0;x<arr.length;x++){
             if(self.IsObject(arr[x])){
                 arr[x] = self.FilterParse(arr[x]);
@@ -143,18 +143,18 @@ CrudController.prototype = {
     FilterParse: function(filterParsed){
         var self = this;
         for(var key in filterParsed){
-            //console.log(key+" "+ filterParsed[key]);
+            //console.log(key+' '+ filterParsed[key]);
             if(self.IsString(filterParsed[key])){
-                //console.log("string");
+                //console.log('string');
                 filterParsed[key] = self.CreateRegexp(filterParsed[key]);
             }
             else if(self.IsArray(filterParsed[key])){
-                //console.log("array");
+                //console.log('array');
                 filterParsed[key] = self.ResolveArray(filterParsed[key]);
             }
             else if(self.IsObject(filterParsed[key])){
                 filterParsed[key] = self.FilterParse(filterParsed[key]);
-                //console.log("In Object");
+                //console.log('In Object');
             }
         }
         return filterParsed;
@@ -202,8 +202,10 @@ CrudController.prototype = {
      * or the empty Array if no documents have been found
      */
     _index: function (req, res) {
+        var sort = {};
         var reqParams = params.map(req);
         var filter = reqParams['filter'] ? reqParams.filter : {};
+        reqParams['sort'] ? reqParams.sort.split(',').map(el => sort[el]=1) : null;
         var select = reqParams['select'] ? reqParams.select.split(',') : [];
         var page = reqParams['page'] ? reqParams.page : 1;
         var count = reqParams['count'] ? reqParams.count : 10;
@@ -233,7 +235,7 @@ CrudController.prototype = {
             var union = this.select.concat(select);
             query.select(union.join(' '));
         }
-        query.skip(skip).limit(count);
+        query.skip(skip).limit(count).sort(sort);
         query.exec(function (err, documents) {
             if (err) {
                 return self.Error(res,err);
@@ -286,19 +288,21 @@ CrudController.prototype = {
         });
     },
     _bulkShow: function (req, res) {
+        var sort = {};
         var reqParams = params.map(req);
         var ids = reqParams['id'].split(',');
+        reqParams['sort'] ? reqParams.sort.split(',').map(el => sort[el]=1) : null;
         var select = reqParams['select'] ? reqParams.select.split(',') : null;
         var query = {
             '_id': { '$in': ids },
-            "deleted": false
+            'deleted': false
         };
         var self = this;
         var mq = this.model.find(query);
         if (select) {
             mq = mq.select(select.join(' '));
         }
-        return mq.exec().then(result => self.Okay(res, result), err => this.Error(res, err));
+        return mq.sort(sort).exec().then(result => self.Okay(res, result), err => this.Error(res, err));
     },
     _updateMapper: function(id,body) {
         var self = this;
@@ -308,7 +312,7 @@ CrudController.prototype = {
                     reject(err);
                 }
                 else if(!doc){
-                    reject(new Error("Document not found"));
+                    reject(new Error('Document not found'));
                 }
                 else{
                     var oldValues = doc.toObject();
@@ -340,14 +344,14 @@ CrudController.prototype = {
     },
     _bulkUpload: function (req,res){
         try{
-            let buffer = req.files.file[0].buffer.toString("utf8");
-            let rows = buffer.split("\n");
-            let keys = rows[0].split(",");
+            let buffer = req.files.file[0].buffer.toString('utf8');
+            let rows = buffer.split('\n');
+            let keys = rows[0].split(',');
             let products = [];
             let self = this;
             rows.splice(0,1);
             rows.forEach(el => {
-                let values = el.split(",");
+                let values = el.split(',');
                 values.length>1?products.push(_.zipObject(keys,values)):null;
             });
             Promise.all(products.map(el => self._bulkPersist(el))).
