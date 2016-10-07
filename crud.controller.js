@@ -106,7 +106,6 @@ CrudController.prototype = {
     CreateRegexp: function(str){
         if(str.charAt(0)==='/' && 
             str.charAt(str.length-1)==='/'){
-                    //console.log('Regex Created');
             return new RegExp(str.substr(1,str.length-2),'i');
         }
         else{
@@ -121,7 +120,6 @@ CrudController.prototype = {
     },
     ResolveArray:   function(arr){
         var self = this;
-        //console.log('Resolving array');
         for(var x =0;x<arr.length;x++){
             if(self.IsObject(arr[x])){
                 arr[x] = self.FilterParse(arr[x]);
@@ -205,7 +203,7 @@ CrudController.prototype = {
         var sort = {};
         var reqParams = params.map(req);
         var filter = reqParams['filter'] ? reqParams.filter : {};
-        reqParams['sort'] ? reqParams.sort.split(',').map(el => sort[el]=1) : null;
+        reqParams['sort'] ? reqParams.sort.split(',').map(el => el.split("-").length>1?sort[el.split("-")[1]]=-1:sort[el.split("-")[0]]=1) : null;
         var select = reqParams['select'] ? reqParams.select.split(',') : [];
         var page = reqParams['page'] ? reqParams.page : 1;
         var count = reqParams['count'] ? reqParams.count : 10;
