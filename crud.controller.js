@@ -141,18 +141,14 @@ CrudController.prototype = {
     FilterParse: function(filterParsed){
         var self = this;
         for(var key in filterParsed){
-            //console.log(key+' '+ filterParsed[key]);
             if(self.IsString(filterParsed[key])){
-                //console.log('string');
                 filterParsed[key] = self.CreateRegexp(filterParsed[key]);
             }
             else if(self.IsArray(filterParsed[key])){
-                //console.log('array');
                 filterParsed[key] = self.ResolveArray(filterParsed[key]);
             }
             else if(self.IsObject(filterParsed[key])){
                 filterParsed[key] = self.FilterParse(filterParsed[key]);
-                //console.log('In Object');
             }
         }
         return filterParsed;
@@ -163,8 +159,14 @@ CrudController.prototype = {
      * @default Okay response.
      */
     Error: function (res,err) {
-        this.logger.error(err);
-        res.status(400).json({ message: err.message });  
+        if(err.errors){
+            var errors = [];
+            Object.keys(err.errors).forEach(el => errors.push(err.errors[el].message));
+            res.status(400).json({message:errors});
+        }
+        else{
+            res.status(400).json({ message: [err.message] });
+        }  
     },
     /**
      * Get a count of results matching a particular filter criteria.
