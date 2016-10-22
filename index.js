@@ -16,8 +16,9 @@ var uniqueValidator = require('mongoose-unique-validator');
  * @param {Object} schema  - Schema for mongoose object.
  * @param {String} collection - Collection to which data needs to be populated.
  */
+
 function MongooseModel(schema,collection,_logger) {
-    this.schema = schema;
+    this.schema = injectDefaults(schema); 
     logger = _logger?_logger:logger;
     schema.plugin(uniqueValidator);
     this.model = mongoose.model(collection, this.schema);
@@ -43,6 +44,16 @@ MongooseModel.prototype = {
     definition: null,
     swagMapper: params.map
 };
-
+function injectDefaults(schema){
+    schema.add( {createdAt : {
+        type:Date,
+        default:Date.now
+    }});
+    schema.add( {lastUpdated : {
+        type:Date,
+        default:Date.now
+    }});
+    schema.pre('save',function(next){this.lastUpdated = new Date();next();});
+}
 MongooseModel.prototype = _.create(ParamController.prototype,MongooseModel.prototype);
 exports = module.exports = MongooseModel.bind(MongooseModel);
