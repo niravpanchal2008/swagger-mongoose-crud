@@ -54,6 +54,7 @@ function injectDefaults(schema){
         default:Date.now
     }});
     schema.pre('save',function(next){this.lastUpdated = new Date();next();});
+    schema.pre('update',function(next){this.lastUpdated = new Date();next();});
     return schema;
 }
 MongooseModel.prototype = _.create(ParamController.prototype,MongooseModel.prototype);
