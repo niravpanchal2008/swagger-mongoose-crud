@@ -318,6 +318,7 @@ CrudController.prototype = {
                     var oldValues = doc.toObject();
                     var updated = _.mergeWith(doc, body,self._customizer); 
                     updated = new self.model(updated);
+                    Object.keys(body).forEach(el => updated.markModified(el));
                     updated.save(function (err) {
                         if (err) {
                             reject(err);
@@ -401,6 +402,7 @@ CrudController.prototype = {
             var oldValues = document.toObject();
             var updated = _.mergeWith(document, bodyData,self._customizer);
             updated = new self.model(updated);
+            Object.keys(body).forEach(el => updated.markModified(el));
             updated.save(function (err) {
                 if (err) {
                     return self.Error(res,err);
