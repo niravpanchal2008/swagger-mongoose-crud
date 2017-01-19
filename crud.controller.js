@@ -426,7 +426,7 @@ CrudController.prototype = {
                     'operation':'Update',
                     'user':req.user?req.user.username:req.headers['masterName'],
                     'originalValues':oldValues,
-                    '_id"':document._id,
+                    '_id':document._id,
                     'newValues':body,
                     'timestamp':new Date()
                 };
