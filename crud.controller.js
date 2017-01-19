@@ -283,7 +283,13 @@ CrudController.prototype = {
             if (err) {
                 return self.Error(res,err);
             }
-            self.logger.audit('Object with id :-' + document._id + ' has been created');    
+            var logObject = {
+                'operation':'Create',
+                'user':req.user?req.user.username:req.headers['masterName'],
+                '_id':document._id,
+                'timestamp':new Date()
+            };
+            self.logger.audit(JSON.stringify(logObject));
             return self.Okay(res,self.getResponseObject(document));
         });
     },
@@ -304,7 +310,7 @@ CrudController.prototype = {
         }
         return mq.sort(sort).exec().then(result => self.Okay(res, result), err => this.Error(res, err));
     },
-    _updateMapper: function(id,body) {
+    _updateMapper: function(id,body,user) {
         var self = this;
         return new Promise((resolve,reject)=>{
             self.model.findOne({ '_id': id, deleted : false },function(err,doc){
@@ -323,7 +329,14 @@ CrudController.prototype = {
                         if (err) {
                             reject(err);
                         }
-                        self.auditLogger(oldValues,body);
+                        var logObject = {
+                            'operation':'Update',
+                            'user':user,
+                            'originalValues':oldValues,
+                            'newValues':body,
+                            'timestamp':new Date()
+                        };
+                        self.logger.audit(JSON.stringify(logObject));
                         resolve(updated);
                     });
                 }
@@ -337,7 +350,8 @@ CrudController.prototype = {
         var self = this;
         selectFields.push('_id');
         var ids = reqParams['id'].split(','); //Ids will be comma seperated ID list
-        var promises = ids.map(id => self._updateMapper(id,body));
+        var user = req.user?req.user.username:req.headers['masterName'];
+        var promises = ids.map(id => self._updateMapper(id,body,user));
         var promise = Promise.all(promises).then(result => res.json(result), err => {
             self.Error(res, err);
         });
@@ -407,7 +421,14 @@ CrudController.prototype = {
                 if (err) {
                     return self.Error(res,err);
                 }
-                self.auditLogger(oldValues,body);
+                var logObject = {
+                    'operation':'Update',
+                    'user':req.user?req.user.username:req.headers['masterName'],
+                    'originalValues':oldValues,
+                    'newValues':body,
+                    'timestamp':new Date()
+                };
+                self.logger.audit(JSON.stringify(logObject));
                 return self.Okay(res,self.getResponseObject(updated));
             });
         });
@@ -467,7 +488,13 @@ CrudController.prototype = {
                 if (err) {
                     return self.Error(res,err);
                 }
-                self.logger.audit('Document with id:- '+ reqParams['id'] +' has been marked as deleted');    
+                var logObject = {
+                    'operation':'Delete',
+                    'user':req.user?req.user.username:req.headers['masterName'],
+                    '_id':document._id,
+                    'timestamp':new Date()
+                };
+                self.logger.audit(JSON.stringify(logObject)); 
                 return self.Okay(res,{});
             });
         });
@@ -482,7 +509,7 @@ CrudController.prototype = {
                 var newResult = callBack(result);
                 if (newResult && typeof newResult.then === 'function') {
                     //newResult is a promise, resolve it and then update.
-                    return newResult.then(res => { self.model.findOneAndUpdate(snapshot, res, { upsert: false, runValidators: true }) })
+                    return newResult.then(res => { self.model.findOneAndUpdate(snapshot, res, { upsert: false, runValidators: true }); })
                         .exec()
                         .then(updated => {
                             if (!updated) {
