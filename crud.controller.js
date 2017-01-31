@@ -468,7 +468,13 @@ CrudController.prototype = {
                 if (err) {
                     return self.Error(res,err);
                 }
-                self.logger.audit('Document with id:- '+ reqParams['id'] +' has been deleted');    
+                var logObject = {
+                    'operation':'Destory',
+                    'user':req.user?req.user.username:req.headers['masterName'],
+                    '_id':document._id,
+                    'timestamp':new Date()
+                };
+                self.logger.audit(JSON.stringify(logObject)); 
                 return self.Okay(res,{});
             });
         });
