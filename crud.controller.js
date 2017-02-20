@@ -106,7 +106,8 @@ CrudController.prototype = {
     CreateRegexp: function(str){
         if(str.charAt(0)==='/' && 
             str.charAt(str.length-1)==='/'){
-            return new RegExp(str.substr(1,str.length-2),'i');
+            var text = str.substr(1,str.length-2).replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+            return new RegExp(text,'i');
         }
         else{
             return str;  
