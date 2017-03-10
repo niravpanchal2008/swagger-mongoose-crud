@@ -101,7 +101,7 @@ CrudController.prototype = {
         res.status(404).send();  
     },
     IsString: function(val){
-        return val.constructor.name === 'String';
+        return val && val.constructor.name === 'String';
     },
     CreateRegexp: function(str){
         if(str.charAt(0)==='/' && 
@@ -113,10 +113,10 @@ CrudController.prototype = {
         }
     },
     IsArray: function(arg) {
-        return arg.constructor.name === 'Array'; 
+        return arg && arg.constructor.name === 'Array'; 
     },
     IsObject: function(arg) {
-        return arg.constructor.name === 'Object'; 
+        return arg && arg.constructor.name === 'Object'; 
     },
     ResolveArray:   function(arr){
         var self = this;
