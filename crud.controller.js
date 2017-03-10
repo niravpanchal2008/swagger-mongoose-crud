@@ -106,7 +106,8 @@ CrudController.prototype = {
     CreateRegexp: function(str){
         if(str.charAt(0)==='/' && 
             str.charAt(str.length-1)==='/'){
-            return new RegExp(str.substr(1,str.length-2),'i');
+            var text = str.substr(1,str.length-2).replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+            return new RegExp(text,'i');
         }
         else{
             return str;  
@@ -468,7 +469,13 @@ CrudController.prototype = {
                 if (err) {
                     return self.Error(res,err);
                 }
-                self.logger.audit('Document with id:- '+ reqParams['id'] +' has been deleted');    
+                var logObject = {
+                    'operation':'Destory',
+                    'user':req.user?req.user.username:req.headers['masterName'],
+                    '_id':document._id,
+                    'timestamp':new Date()
+                };
+                self.logger.audit(JSON.stringify(logObject)); 
                 return self.Okay(res,{});
             });
         });
