@@ -18,7 +18,7 @@
     "gulp": "^3.9.1",
     "lodash": "^4.11.2",
     "log4js": "^0.6.36",
-    "mongoose": "^4.4.14",
+    "mongoose": "^4.9.5",
     "mongoose-unique-validator": "git+https://github.com/capiotsoftware/mongoose-unique-validator.git"
   },
   "devDependencies": {
