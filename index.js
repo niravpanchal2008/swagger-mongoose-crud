@@ -53,6 +53,10 @@ function injectDefaults(schema){
         type:Date,
         default:Date.now
     }});
+    schema.add( {deleted : {
+        type:Boolean,
+        default:false
+    }});
     schema.index({lastUpdated:1});
     schema.index({createdAt:1});
     schema.pre('save',function(next){this.lastUpdated = new Date();next();});
