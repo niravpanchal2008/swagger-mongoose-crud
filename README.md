@@ -10,7 +10,9 @@ This module exposes following basic operations.
 * Index (list)
 
 ## Installation
+``` sh
 npm install https://github.com/capiotsoftware/swagger-mongoose-crud.git --save
+```
 
 ## Usage 
 ```javascript
@@ -20,9 +22,13 @@ var SMCrud = require('swagger-mongoose-crud.git');
 var schema = new Mongoose.Schema({ 
     //Your mongoose Schema definition here.
 });
-var collection = "Your Collection Name";
+var modelName = "Your model Name";
+var options = {
+ collectionName: "name of your collection",
+ logger: "your logger object"
+}
 
-var crud = new SMCrud(schema,collection);
+var crud = new SMCrud(schema,modelName, options);
 var exports = {};
 
 //Takes all parameters for creating an entry
@@ -33,6 +39,9 @@ exports.update = crud.update;
 
 //Will list out the entire collection, No parameters
 exports.index = crud.index;
+
+//Will mark the entity as deleted by setting deleted flag to true, takes 'id'
+exports.markAsDeleted = crud.markAsDeleted;
 
 //Will delete the entity, takes 'id'
 exports.destroy = crud.destroy;
@@ -56,4 +65,14 @@ crud.omit = [
 module.exports = exports;
 ```
 
-**Note : Still under active development, Not ready for primetime use**
+## Fields added by this library to your schema
+
+* _createdAt_ : Type _Date_. The time of creation of the document
+* _lastUpdated_ : Type _Date_. The last updated time of the document
+* _deleted_ : Type _Boolean_. This is false by default. The 
+
+## Indexed fields
+
+* lastUpdated
+* createdAt
+

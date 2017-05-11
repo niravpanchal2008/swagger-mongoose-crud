@@ -13,9 +13,12 @@ var definition = {
 };
 
 var schema = Mongoose.Schema(definition);
-var collection = 'foobar';
+var modelName = 'foobar';
+var options = {
+    collectionName: 'foobar'
+};
 
-var testCrud = new Crudder(schema, collection);
+var testCrud = new Crudder(schema, modelName, options);
 
 describe('Methods Sanity Check', function () {
     describe('create', function () {
