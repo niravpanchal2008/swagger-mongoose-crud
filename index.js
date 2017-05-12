@@ -23,7 +23,7 @@ function MongooseModel(schema,modelName,options) {
     logger = options.logger?options.logger:logger;
     schema.plugin(uniqueValidator);
     this.model = mongoose.model(modelName, this.schema, options.collectionName);
-    ParamController.call(this, this.model, this.model.modelName,logger);
+    ParamController.call(this, this.model, modelName,logger);
     this.index = this._index.bind(this);
     this.create = this._create.bind(this);
     this.show = this._show.bind(this);
