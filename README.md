@@ -76,4 +76,4 @@ module.exports = exports;
 
 * lastUpdated
 * createdAt
-
+.
