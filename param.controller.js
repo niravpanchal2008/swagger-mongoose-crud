@@ -1,4 +1,3 @@
-
 var _ = require('lodash');
 var ObjectID = require('mongoose').Types.ObjectId;
 var util = require('util');
@@ -19,13 +18,13 @@ var CrudController = require('./crud.controller');
  * defaults to the lowercase model name with 'Param' appended.
  * @param {Object} logger - logger instance
  */
-function ParamController(model, idName, logger) {
+function ParamController(model, idName, logger, defaultFilter) {
     var modelName = model.modelName.toLowerCase();
-   
+
     var paramName = modelName + 'Param';
 
     // call super constructor
-    CrudController.call(this, model,logger);
+    CrudController.call(this, model, logger, defaultFilter);
     // only set param if it is set, will default to 'id'
     if (!paramName) {
         paramName = modelName + 'Param';
@@ -90,7 +89,7 @@ var ParamPrototype = {
     //     var self = this;
     //     var bodyData = _.omit(req.body, this.omit);
     //     var updated = _.merge(req[this.paramName], bodyData);
-        
+
     //     updated.save(function (err) {
     //         if (err) {
     //             return res.handleError(err);

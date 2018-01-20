@@ -15,14 +15,12 @@
   "author": "Abilash Mohan <abilash@capiot.com>",
   "license": "MIT",
   "dependencies": {
-    "gulp": "^3.9.1",
-    "lodash": "^4.11.2",
-    "log4js": "^0.6.36",
-    "mongoose": "^4.9.5",
+    "lodash": "^4.17.4",
+    "log4js": "^2.4.1",
+    "mongoose": "^4.13.9",
     "mongoose-unique-validator": "git+https://github.com/capiotsoftware/mongoose-unique-validator.git"
   },
   "devDependencies": {
-    "chai": "^3.5.0",
-    "mocha": "^2.5.3"
+    "chai": "^4.1.2"
   }
 }

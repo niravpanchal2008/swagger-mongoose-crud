@@ -9,6 +9,12 @@ This module exposes following basic operations.
 * Read
 * Delete
 * Index (list)
+* Count
+* bulkUpdate
+* bulkUpload
+* bulkShow
+* markAsDeleted
+* rucc
 
 ## Installation
 ``` sh
@@ -26,7 +32,8 @@ var schema = new Mongoose.Schema({
 var modelName = "Your model Name";
 var options = {
  collectionName: "name of your collection",
- logger: "your logger object"
+ logger: "your logger object",
+ defaultFilter: "default filter object for all read operations"
 }
 
 var crud = new SMCrud(schema,modelName, options);
@@ -52,6 +59,18 @@ exports.show = crud.show;
 
 //Will count the number of entries in the DB, Supports filter options.
 exports.count = crud.count;
+
+//Will update multiple document, takes comma separated 'id'
+exports.bulkUpdate = crud.bulkUpdate;
+
+//Will create multiple documents, takes file with comma separated data
+exports.bulkUpload = crud.bulkUpload;
+
+//Will show multiple entity, takes comma separated 'id'
+exports.bulkShow = crud.bulkShow;
+
+// Will ensure consistency when there are multiple parallel updates expected on the same document. This module is partially incomplete.
+exports.rucc = crud.rucc; 
 
 //crud.model will hold the Mongoose Model.
 //crud.schema will hold the schema passed on at constructor

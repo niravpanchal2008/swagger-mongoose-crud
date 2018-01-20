@@ -4,6 +4,8 @@ var ParamController = require('./param.controller');
 var _ = require('lodash');
 var log4js = require('log4js');
 var logger = process.env.PROD_ENV ? log4js.getLogger('swagger-mongoose-crud') : log4js.getLogger('swagger-mongoose-crud-dev');
+var logLevel = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : 'info';
+var defaultFilter = {};
 var params = require('./swagger.params.map');
 var uniqueValidator = require('mongoose-unique-validator');
 /**
@@ -17,12 +19,15 @@ var uniqueValidator = require('mongoose-unique-validator');
  * @param {Object} options - optional options object. Takes 2 values - logger and collectionName
  */
 
+
 function MongooseModel(schema, modelName, options) {
     this.schema = injectDefaults(schema);
     logger = options.logger ? options.logger : logger;
+    logger.level = logLevel;
+    defaultFilter = options.defaultFilter ? options.defaultFilter : defaultFilter;
     schema.plugin(uniqueValidator);
     this.model = mongoose.model(modelName, this.schema, options.collectionName);
-    ParamController.call(this, this.model, modelName, logger);
+    ParamController.call(this, this.model, modelName, logger, defaultFilter);
     this.index = this._index.bind(this);
     this.create = this._create.bind(this);
     this.show = this._show.bind(this);
@@ -45,6 +50,7 @@ MongooseModel.prototype = {
     swagMapper: params.map
 };
 
+
 function injectDefaults(schema) {
     schema.add({
         createdAt: {
@@ -64,12 +70,20 @@ function injectDefaults(schema) {
             default: false
         }
     });
-    schema.index({ lastUpdated: 1 });
-    schema.index({ createdAt: 1 });
-    schema.pre('save', function(next) { this.lastUpdated = new Date();
-        next(); });
-    schema.pre('update', function(next) { this.lastUpdated = new Date();
-        next(); });
+    schema.index({
+        lastUpdated: 1
+    });
+    schema.index({
+        createdAt: 1
+    });
+    schema.pre('save', function (next) {
+        this.lastUpdated = new Date();
+        next();
+    });
+    schema.pre('update', function (next) {
+        this.lastUpdated = new Date();
+        next();
+    });
     return schema;
 }
 MongooseModel.prototype = _.create(ParamController.prototype, MongooseModel.prototype);
