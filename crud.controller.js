@@ -23,6 +23,7 @@ function CrudController(model, logger, defaultFilter) {
     this.model = model;
     this.logger = logger;
     this.defaultFilter = defaultFilter ? defaultFilter : {};
+    this.defaultFilter = this.FilterParse(defaultFilter);
     // set id name if defined, defaults to 'id'
     this.omit = [];
     _.bindAll(this);
@@ -194,7 +195,7 @@ CrudController.prototype = {
                 filter = {};
             }
         }
-        filter = _.assign(self.defaultFilter, filter);
+        filter = _.assign({}, self.defaultFilter, filter);
         if (this.omit.length > 0) {
             filter = _.omit(filter, this.omit);
         }
@@ -232,7 +233,7 @@ CrudController.prototype = {
                 filter = {};
             }
         }
-        filter = _.assign(self.defaultFilter, filter);
+        filter = _.assign({}, self.defaultFilter, filter);
         if (this.omit.length) {
             filter = _.omit(filter, this.omit);
         }
