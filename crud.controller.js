@@ -248,7 +248,8 @@ CrudController.prototype = {
             var union = this.select.concat(select);
             query.select(union.join(' '));
         }
-        query.skip(skip).limit(count).sort(sort);
+        if(count == -1) query.sort(sort)
+        else query.skip(skip).limit(count).sort(sort);
         query.exec(function (err, documents) {
             if (err) {
                 return self.Error(res, err);
