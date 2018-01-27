@@ -437,7 +437,7 @@ CrudController.prototype = {
         var self = this;
         var bodyData = _.omit(body, this.omit);
 
-        this.model.findOne({
+        return this.model.findOne({
             '_id': reqParams['id'],
             deleted: false
         }, function (err, document) {
