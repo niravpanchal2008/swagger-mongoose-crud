@@ -4,6 +4,7 @@ var _ = require('lodash');
 var BaseController = require('./base.controller');
 var params = require('./swagger.params.map');
 
+var mongoose = require('mongoose');
 
 
 /**
@@ -29,9 +30,9 @@ function CrudController(model, logger, defaultFilter) {
     _.bindAll(this);
 }
 
-function debugLogReq(req, logger){
-    var ob = _.pick(req, ['baseUrl','body','hostname','params','path','query']);
-    logger.debug("Getting Request::"+ JSON.stringify(ob));
+function debugLogReq(req, logger) {
+    var ob = _.pick(req, ['baseUrl', 'body', 'hostname', 'params', 'path', 'query']);
+    logger.debug("Getting Request::" + JSON.stringify(ob));
 }
 
 CrudController.prototype = {
@@ -169,7 +170,9 @@ CrudController.prototype = {
             res.status(400).json({
                 message: errors
             });
-            this.logger.debug('Sending Response:: '+ JSON.stringify({ message: errors }));
+            this.logger.debug('Sending Response:: ' + JSON.stringify({
+                message: errors
+            }));
         } else {
             res.status(400).json({
                 message: [err.message]
@@ -200,8 +203,12 @@ CrudController.prototype = {
             filter = _.omit(filter, this.omit);
         }
         filter.deleted = false;
-        this.model.find(filter).count().exec().then(result => self.Okay(res, result),
-            err => self.Error(res, err));
+        return this.model
+            .find(filter)
+            .count()
+            .exec()
+            .then(result => self.Okay(res, result))
+            .catch(err => {return self.Error(res, err);});
     },
     /**
      * Get a list of documents. If a request query is passed it is used as the
@@ -248,13 +255,14 @@ CrudController.prototype = {
             var union = this.select.concat(select);
             query.select(union.join(' '));
         }
-        if(count == -1) query.sort(sort)
+        if (count == -1) query.sort(sort)
         else query.skip(skip).limit(count).sort(sort);
-        query.exec(function (err, documents) {
-            if (err) {
-                return self.Error(res, err);
-            }
+        return query.exec()
+        .then(documents=>{
             return self.Okay(res, documents);
+        })
+        .catch(err=>{
+            return self.Error(res, err);
         });
     },
 
@@ -277,13 +285,18 @@ CrudController.prototype = {
         if (select.length > 0) {
             query = query.select(select.join(' '));
         }
-        query.exec().then((document) => {
-            if (!document) {
-                return self.NotFound(res);
-            } else {
-                return self.Okay(res, self.getResponseObject(document));
-            }
-        }, err => self.Error(res, err));
+        return query.exec()
+            .then((document) => {
+                if (!document) {
+                    return self.NotFound(res);
+                } else {
+                    return self.Okay(res, self.getResponseObject(document));
+                }
+            })
+            .catch(err => {
+                return self.Error(res, err);
+            });
+
     },
 
     /**
@@ -295,22 +308,24 @@ CrudController.prototype = {
     _create: function (req, res) {
         var self = this;
         debugLogReq(req, this.logger);
-        //new this.model(req.body).save(function(Err,document){
         var payload = 'data';
         var body = params.map(req)[payload];
-        this.model.create(body, function (err, document) {
-            if (err) {
+        return this.model.create(body)
+            .then(document => {
+                var logObject = {
+                    'operation': 'Create',
+                    'user': req.user ? req.user.username : req.headers['masterName'],
+                    '_id': document._id,
+                    'timestamp': new Date()
+                };
+                self.logger.debug(JSON.stringify(logObject));
+                return self.Okay(res, self.getResponseObject(document));
+            }, err => {
                 return self.Error(res, err);
-            }
-            var logObject = {
-                'operation': 'Create',
-                'user': req.user ? req.user.username : req.headers['masterName'],
-                '_id': document._id,
-                'timestamp': new Date()
-            };
-            self.logger.debug(JSON.stringify(logObject));
-            return self.Okay(res, self.getResponseObject(document));
-        });
+            })
+            .catch(err => {
+                return self.Error(res, err);
+            });
     },
     _bulkShow: function (req, res) {
         var sort = {};
@@ -379,7 +394,7 @@ CrudController.prototype = {
         var promises = ids.map(id => self._updateMapper(id, body, user));
         var promise = Promise.all(promises).then(result => {
             res.json(result);
-            self.logger.debug("Sending Response:: " +JSON.stringify(result));
+            self.logger.debug("Sending Response:: " + JSON.stringify(result));
         }, err => {
             self.Error(res, err);
         });
@@ -398,14 +413,14 @@ CrudController.prototype = {
                 let values = el.split(',');
                 values.length > 1 ? products.push(_.zipObject(keys, values)) : null;
             });
-            Promise.all(products.map(el => self._bulkPersist(el))).
+            return Promise.all(products.map(el => self._bulkPersist(el))).
             then(result => {
                 res.status(200).json(result);
-                self.logger.debug("Sending Response:: "+JSON.stringify(result));
+                self.logger.debug("Sending Response:: " + JSON.stringify(result));
             });
         } catch (e) {
             res.status(400).json(e);
-            self.logger.debug("Sending Response:: "+ JSON.stringify(e));
+            self.logger.debug("Sending Response:: " + JSON.stringify(e));
         }
     },
     _bulkPersist: function (el) {
@@ -437,26 +452,25 @@ CrudController.prototype = {
         }
         var self = this;
         var bodyData = _.omit(body, this.omit);
-
+        let oldValues = null;
+        let document = null;
+        let updated = null;
         return this.model.findOne({
-            '_id': reqParams['id'],
-            deleted: false
-        }, function (err, document) {
-            if (err) {
-                return self.Error(res, err);
-            }
-
-            if (!document) {
-                return self.NotFound(res);
-            }
-            var oldValues = document.toObject();
-            var updated = _.mergeWith(document, bodyData, self._customizer);
-            updated = new self.model(updated);
-            Object.keys(body).forEach(el => updated.markModified(el));
-            updated.save(function (err) {
-                if (err) {
-                    return self.Error(res, err);
+                '_id': reqParams['id'],
+                deleted: false
+            })
+            .then(_document => {
+                if (!_document) {
+                    return self.NotFound(res);
                 }
+                oldValues = _document.toObject();
+                document = _document;
+                updated = _.mergeWith(_document, bodyData, self._customizer);
+                updated = new self.model(updated);
+                Object.keys(body).forEach(el => updated.markModified(el));
+                return updated.save();
+            })
+            .then(() => {
                 var logObject = {
                     'operation': 'Update',
                     'user': req.user ? req.user.username : req.headers['masterName'],
@@ -467,8 +481,10 @@ CrudController.prototype = {
                 };
                 self.logger.debug(JSON.stringify(logObject));
                 return self.Okay(res, self.getResponseObject(updated));
-            });
-        });
+            })
+            .catch(err => {
+                self.Error(res, err);
+            })
     },
 
     _customizer: function (objValue, srcValue) {
@@ -491,53 +507,50 @@ CrudController.prototype = {
         var reqParams = params.map(req);
         debugLogReq(req, this.logger);
         var self = this;
-        this.model.findOne({
+        let document = null;
+        return this.model.findOne({
             '_id': reqParams['id']
-        }, function (err, document) {
-            if (err) {
-                return self.Error(res, err);
-            }
-
-            if (!document) {
+        })
+        .then(doc=>{
+            if (!doc) {
                 return self.NotFound(res);
             }
-
-            document.remove(function (err) {
-                if (err) {
-                    return self.Error(res, err);
-                }
-                var logObject = {
-                    'operation': 'Destory',
-                    'user': req.user ? req.user.username : req.headers['masterName'],
-                    '_id': document._id,
-                    'timestamp': new Date()
-                };
-                self.logger.debug(JSON.stringify(logObject));
-                return self.Okay(res, {});
-            });
-        });
+            document = doc;
+            return doc.remove()
+        })
+        .then(()=>{
+            var logObject = {
+                'operation': 'Destory',
+                'user': req.user ? req.user.username : req.headers['masterName'],
+                '_id': document._id,
+                'timestamp': new Date()
+            };
+            self.logger.debug(JSON.stringify(logObject));
+            return self.Okay(res, {});
+        })
+        .catch(err=>{
+            return self.Error(res, err);
+        })
     },
 
     _markAsDeleted: function (req, res) {
         var reqParams = params.map(req);
         debugLogReq(req, this.logger);
         var self = this;
-        this.model.findOne({
+        let document = null;
+        return this.model.findOne({
             '_id': reqParams['id'],
             deleted: false
-        }, function (err, document) {
-            if (err) {
-                return self.Error(res, err);
-            }
-
-            if (!document) {
+        })
+        .then(doc=>{
+            if (!doc) {
                 return self.NotFound(res);
             }
-            document.deleted = true;
-            document.save(function (err) {
-                if (err) {
-                    return self.Error(res, err);
-                }
+            doc.deleted = true;
+            document = JSON.parse(JSON.stringify(doc));
+            return doc.save()
+        })
+        .then(()=>{
                 var logObject = {
                     'operation': 'Delete',
                     'user': req.user ? req.user.username : req.headers['masterName'],
@@ -546,8 +559,10 @@ CrudController.prototype = {
                 };
                 self.logger.debug(JSON.stringify(logObject));
                 return self.Okay(res, {});
-            });
-        });
+        })
+        .catch(err =>{
+            return self.Error(res, err);
+        })
     },
 
     _rucc: function (queryObject, callBack) {
