@@ -513,7 +513,7 @@ CrudController.prototype = {
         })
         .then(doc=>{
             if (!doc) {
-                return self.NotFound(res);
+                return;
             }
             document = doc;
             return doc.remove()
@@ -522,7 +522,7 @@ CrudController.prototype = {
             var logObject = {
                 'operation': 'Destory',
                 'user': req.user ? req.user.username : req.headers['masterName'],
-                '_id': document._id,
+                '_id': reqParams['id'],
                 'timestamp': new Date()
             };
             self.logger.debug(JSON.stringify(logObject));
