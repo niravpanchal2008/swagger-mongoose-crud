@@ -455,12 +455,14 @@ CrudController.prototype = {
         let oldValues = null;
         let document = null;
         let updated = null;
+        let resSentFlag = false;
         return this.model.findOne({
                 '_id': reqParams['id'],
                 deleted: false
             })
             .then(_document => {
                 if (!_document) {
+                    resSentFlag = true;
                     return self.NotFound(res);
                 }
                 oldValues = _document.toObject();
@@ -471,6 +473,7 @@ CrudController.prototype = {
                 return updated.save();
             })
             .then(() => {
+                if(resSentFlag) return;
                 var logObject = {
                     'operation': 'Update',
                     'user': req.user ? req.user.username : req.headers['masterName'],
@@ -544,7 +547,7 @@ CrudController.prototype = {
         })
         .then(doc=>{
             if (!doc) {
-                return self.NotFound(res);
+                return;
             }
             doc.deleted = true;
             document = JSON.parse(JSON.stringify(doc));
