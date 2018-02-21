@@ -35,6 +35,29 @@ function debugLogReq(req, logger) {
     logger.debug("Getting Request::" + JSON.stringify(ob));
 }
 
+function createDocument(model, body, req) {
+    let args = [];
+    if (Array.isArray(body)) {
+        args = body;
+    } else {
+        args.push(body);
+    }
+    let savePromise = [];
+    args.forEach(doc => {
+        let docModel = new model(doc);
+        savePromise.push(docModel.save(req));
+    });
+    return Promise.all(savePromise)
+        .then(docs => {
+            if (docs) {
+                if (docs.length === 1)
+                    return docs[0];
+                return docs;
+            }
+            return;
+        });
+}
+
 CrudController.prototype = {
 
     /**
@@ -208,7 +231,9 @@ CrudController.prototype = {
             .count()
             .exec()
             .then(result => self.Okay(res, result))
-            .catch(err => {return self.Error(res, err);});
+            .catch(err => {
+                return self.Error(res, err);
+            });
     },
     /**
      * Get a list of documents. If a request query is passed it is used as the
@@ -258,12 +283,12 @@ CrudController.prototype = {
         if (count == -1) query.sort(sort)
         else query.skip(skip).limit(count).sort(sort);
         return query.exec()
-        .then(documents=>{
-            return self.Okay(res, documents);
-        })
-        .catch(err=>{
-            return self.Error(res, err);
-        });
+            .then(documents => {
+                return self.Okay(res, documents);
+            })
+            .catch(err => {
+                return self.Error(res, err);
+            });
     },
 
     /**
@@ -310,7 +335,7 @@ CrudController.prototype = {
         debugLogReq(req, this.logger);
         var payload = 'data';
         var body = params.map(req)[payload];
-        return this.model.create(body)
+        return createDocument(self.model, body, req)
             .then(document => {
                 var logObject = {
                     'operation': 'Create',
@@ -320,8 +345,6 @@ CrudController.prototype = {
                 };
                 self.logger.debug(JSON.stringify(logObject));
                 return self.Okay(res, self.getResponseObject(document));
-            }, err => {
-                return self.Error(res, err);
             })
             .catch(err => {
                 return self.Error(res, err);
@@ -347,7 +370,7 @@ CrudController.prototype = {
         }
         return mq.sort(sort).exec().then(result => self.Okay(res, result), err => this.Error(res, err));
     },
-    _updateMapper: function (id, body, user) {
+    _updateMapper: function (id, body, user, req) {
         var self = this;
         return new Promise((resolve, reject) => {
             self.model.findOne({
@@ -363,7 +386,7 @@ CrudController.prototype = {
                     var updated = _.mergeWith(doc, body, self._customizer);
                     updated = new self.model(updated);
                     Object.keys(body).forEach(el => updated.markModified(el));
-                    updated.save(function (err) {
+                    updated.save(req, function (err) {
                         if (err) {
                             reject(err);
                         }
@@ -391,7 +414,7 @@ CrudController.prototype = {
         selectFields.push('_id');
         var ids = reqParams['id'].split(','); //Ids will be comma seperated ID list
         var user = req.user ? req.user.username : req.headers['masterName'];
-        var promises = ids.map(id => self._updateMapper(id, body, user));
+        var promises = ids.map(id => self._updateMapper(id, body, user, req));
         var promise = Promise.all(promises).then(result => {
             res.json(result);
             self.logger.debug("Sending Response:: " + JSON.stringify(result));
@@ -470,10 +493,10 @@ CrudController.prototype = {
                 updated = _.mergeWith(_document, bodyData, self._customizer);
                 updated = new self.model(updated);
                 Object.keys(body).forEach(el => updated.markModified(el));
-                return updated.save();
+                return updated.save(req);
             })
             .then(() => {
-                if(resSentFlag) return;
+                if (resSentFlag) return;
                 var logObject = {
                     'operation': 'Update',
                     'user': req.user ? req.user.username : req.headers['masterName'],
@@ -512,28 +535,28 @@ CrudController.prototype = {
         var self = this;
         let document = null;
         return this.model.findOne({
-            '_id': reqParams['id']
-        })
-        .then(doc=>{
-            if (!doc) {
-                return;
-            }
-            document = doc;
-            return doc.remove()
-        })
-        .then(()=>{
-            var logObject = {
-                'operation': 'Destory',
-                'user': req.user ? req.user.username : req.headers['masterName'],
-                '_id': reqParams['id'],
-                'timestamp': new Date()
-            };
-            self.logger.debug(JSON.stringify(logObject));
-            return self.Okay(res, {});
-        })
-        .catch(err=>{
-            return self.Error(res, err);
-        })
+                '_id': reqParams['id']
+            })
+            .then(doc => {
+                if (!doc) {
+                    return;
+                }
+                document = doc;
+                return doc.remove(req);
+            })
+            .then(() => {
+                var logObject = {
+                    'operation': 'Destory',
+                    'user': req.user ? req.user.username : req.headers['masterName'],
+                    '_id': reqParams['id'],
+                    'timestamp': new Date()
+                };
+                self.logger.debug(JSON.stringify(logObject));
+                return self.Okay(res, {});
+            })
+            .catch(err => {
+                return self.Error(res, err);
+            })
     },
 
     _markAsDeleted: function (req, res) {
@@ -542,18 +565,18 @@ CrudController.prototype = {
         var self = this;
         let document = null;
         return this.model.findOne({
-            '_id': reqParams['id'],
-            deleted: false
-        })
-        .then(doc=>{
-            if (!doc) {
-                return;
-            }
-            doc.deleted = true;
-            document = JSON.parse(JSON.stringify(doc));
-            return doc.save()
-        })
-        .then(()=>{
+                '_id': reqParams['id'],
+                deleted: false
+            })
+            .then(doc => {
+                if (!doc) {
+                    return;
+                }
+                doc.deleted = true;
+                document = JSON.parse(JSON.stringify(doc));
+                return doc.save(req);
+            })
+            .then(() => {
                 var logObject = {
                     'operation': 'Delete',
                     'user': req.user ? req.user.username : req.headers['masterName'],
@@ -562,10 +585,10 @@ CrudController.prototype = {
                 };
                 self.logger.debug(JSON.stringify(logObject));
                 return self.Okay(res, {});
-        })
-        .catch(err =>{
-            return self.Error(res, err);
-        })
+            })
+            .catch(err => {
+                return self.Error(res, err);
+            })
     },
 
     _rucc: function (queryObject, callBack) {
