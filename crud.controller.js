@@ -254,6 +254,7 @@ CrudController.prototype = {
         var select = reqParams['select'] ? reqParams.select.split(',') : [];
         var page = reqParams['page'] ? reqParams.page : 1;
         var count = reqParams['count'] ? reqParams.count : 10;
+        var search = reqParams['search'] ? reqParams.search : null;
         var skip = count * (page - 1);
         var self = this;
         if (typeof filter === 'string') {
@@ -270,6 +271,9 @@ CrudController.prototype = {
             filter = _.omit(filter, this.omit);
         }
         filter.deleted = false;
+        if(search){
+            filter['$text'] = {'$search': search};
+        }
         var query = this.model.find(filter);
 
         if (this.lean) {
