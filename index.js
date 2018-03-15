@@ -39,6 +39,8 @@ function MongooseModel(schema, modelName, options) {
     this.bulkUpload = this._bulkUpload.bind(this);
     this.bulkShow = this._bulkShow.bind(this);
     this.markAsDeleted = this._markAsDeleted.bind(this);
+    this.bulkDestroy = this._bulkDestroy.bind(this);
+    this.bulkMarkAsDeleted = this._bulkMarkAsDeleted.bind(this);
     logger.trace('Initialised Mongoose Model');
 }
 

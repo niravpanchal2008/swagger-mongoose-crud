@@ -58,6 +58,63 @@ function createDocument(model, body, req) {
         });
 }
 
+function removeDocument(doc, req, type){
+    return new Promise(resolve=>{
+        if(type == "markAsDeleted"){
+            doc.deleted = true;
+            doc.save(req)
+            .then(doc=>{
+                resolve(doc);
+            })
+            .catch(err=>resolve(null));
+        }else{
+            doc.remove(req)
+            .then(()=>{
+                resolve(doc.toObject());
+            })
+            .catch(err=>resolve(null));
+        }
+    });
+}
+
+function bulkRemove(self, req, res, type){
+    var reqParams = params.map(req);
+    debugLogReq(req, self.logger);
+    let document = null;
+    var ids = reqParams['id'].split(',');
+    return self.model.find({
+            '_id': {"$in" : ids},
+            deleted: false
+        })
+        .then(docs => {
+            if (!docs) {
+                return [];
+            }
+            let removePromise = docs.map(doc=>removeDocument(doc, req, type));
+            return Promise.all(removePromise);
+        })
+        .then((removedDocs) => {
+            removedDocs = removedDocs.filter(doc=>doc != null);
+            let removedIds = removedDocs.map(doc=>doc._id);
+            var logObject = {
+                'operation': 'Delete',
+                'user': req.user ? req.user.username : req.headers['masterName'],
+                '_id': removedIds,
+                'timestamp': new Date()
+            };
+            self.logger.debug(JSON.stringify(logObject));
+            let docsNotRemoved = _.difference(_.uniq(ids), removedIds);
+            if(_.isEmpty(docsNotRemoved))
+                return self.Okay(res, {});
+            else{
+                throw new Error("Could not delete document with id "+ docsNotRemoved);
+            }    
+        })
+        .catch(err => {
+            return self.Error(res, err);
+        });
+}
+
 CrudController.prototype = {
 
     /**
@@ -562,7 +619,10 @@ CrudController.prototype = {
                 return self.Error(res, err);
             })
     },
-
+    _bulkDestroy: function(req, res){
+        let self = this;
+        bulkRemove(self, req, res, "destroy");
+    },
     _markAsDeleted: function (req, res) {
         var reqParams = params.map(req);
         debugLogReq(req, this.logger);
@@ -592,9 +652,12 @@ CrudController.prototype = {
             })
             .catch(err => {
                 return self.Error(res, err);
-            })
+            });
     },
-
+    _bulkMarkAsDeleted: function (req, res) {
+        let self = this;
+        bulkRemove(self, req, res, "markAsDeleted");
+    },
     _rucc: function (queryObject, callBack) {
         //rucc = Read Update Check Commit
         var self = this;
