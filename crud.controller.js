@@ -81,7 +81,7 @@ function bulkRemove(self, req, res, type){
     var reqParams = params.map(req);
     debugLogReq(req, self.logger);
     let document = null;
-    var ids = reqParams['id'].split(',');
+    var ids = reqParams['id'] ? reqParams['id'].split(',') : [];
     return self.model.find({
             '_id': {"$in" : ids},
             deleted: false
