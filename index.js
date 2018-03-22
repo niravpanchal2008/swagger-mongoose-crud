@@ -48,7 +48,7 @@ function MongooseModel(schema, modelName, options) {
     logger.level = logLevel;
     let defaultFilter = options.defaultFilter ? options.defaultFilter : {};
     schema.plugin(uniqueValidator);
-    schema.plugin(trimPlugin);
+    //schema.plugin(trimPlugin);
     this.model = mongoose.model(modelName, this.schema, options.collectionName);
     ParamController.call(this, this.model, modelName, logger, defaultFilter);
     this.index = this._index.bind(this);
