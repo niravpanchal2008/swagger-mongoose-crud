@@ -18,37 +18,12 @@ var uniqueValidator = require('mongoose-unique-validator');
  * @param {Object} options - optional options object. Takes 2 values - logger and collectionName
  */
 
-function trimData(data) {
-    if (!data) return data;
-    if (Array.isArray(data)) {
-        data = data.map(val => trimData(val));
-        return data;
-    } else if (typeof data === "object") {
-        Object.keys(data).forEach(key => {
-            data[key] = trimData(data[key]);
-        });
-        return data;
-    } else if (typeof data === "string") {
-        return data.trim();
-    }
-    return data;
-}
-
-function trimPlugin(schema) {
-    schema.pre("validate", function (next) {
-        let self = this;
-        Object.assign(this, trimData(self));
-        next();
-    });
-}
-
 function MongooseModel(schema, modelName, options) {
     this.schema = injectDefaults(schema);
     logger = options.logger ? options.logger : logger;
     logger.level = logLevel;
     let defaultFilter = options.defaultFilter ? options.defaultFilter : {};
     schema.plugin(uniqueValidator);
-    //schema.plugin(trimPlugin);
     this.model = mongoose.model(modelName, this.schema, options.collectionName);
     ParamController.call(this, this.model, modelName, logger, defaultFilter);
     this.index = this._index.bind(this);
@@ -78,35 +53,46 @@ MongooseModel.prototype = {
 
 function injectDefaults(schema) {
     schema.add({
-        createdAt: {
+        _createdAt: {
             type: Date,
             default: Date.now
         }
     });
     schema.add({
-        lastUpdated: {
+        _lastUpdated: {
             type: Date,
             default: Date.now
         }
     });
     schema.add({
-        deleted: {
+        _deleted: {
             type: Boolean,
             default: false
         }
     });
-    schema.index({
-        lastUpdated: 1
+    schema.add({
+        _version: {
+            type: Number,
+            default: 0
+        }
     });
     schema.index({
-        createdAt: 1
+        _lastUpdated: 1
+    });
+    schema.index({
+        _createdAt: 1
+    });
+    schema.index({
+        _version: 1
     });
     schema.pre('save', function (next) {
-        this.lastUpdated = new Date();
+        this._version++;
+        this._lastUpdated = new Date();
         next();
     });
     schema.pre('update', function (next) {
-        this.lastUpdated = new Date();
+        this._version++;
+        this._lastUpdated = new Date();
         next();
     });
     return schema;

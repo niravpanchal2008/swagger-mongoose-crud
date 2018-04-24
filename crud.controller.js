@@ -61,7 +61,7 @@ function createDocument(model, body, req) {
 function removeDocument(doc, req, type){
     return new Promise(resolve=>{
         if(type == "markAsDeleted"){
-            doc.deleted = true;
+            doc._deleted = true;
             doc.save(req)
             .then(doc=>{
                 resolve(doc);
@@ -84,7 +84,7 @@ function bulkRemove(self, req, res, type){
     var ids = reqParams['id'] ? reqParams['id'].split(',') : [];
     return self.model.find({
             '_id': {"$in" : ids},
-            deleted: false
+            _deleted: false
         })
         .then(docs => {
             if (!docs) {
@@ -282,7 +282,7 @@ CrudController.prototype = {
         if (this.omit.length > 0) {
             filter = _.omit(filter, this.omit);
         }
-        filter.deleted = false;
+        filter._deleted = false;
         return this.model
             .find(filter)
             .count()
@@ -305,7 +305,7 @@ CrudController.prototype = {
         debugLogReq(req, this.logger);
         var filter = reqParams['filter'] ? reqParams.filter : {};
         var sort = reqParams['sort'] ? {} : {
-            lastUpdated: -1
+            _lastUpdated: -1
         };
         reqParams['sort'] ? reqParams.sort.split(',').map(el => el.split('-').length > 1 ? sort[el.split('-')[1]] = -1 : sort[el.split('-')[0]] = 1) : null;
         var select = reqParams['select'] ? reqParams.select.split(',') : [];
@@ -327,7 +327,7 @@ CrudController.prototype = {
         if (this.omit.length) {
             filter = _.omit(filter, this.omit);
         }
-        filter.deleted = false;
+        filter._deleted = false;
         if(search){
             filter['$text'] = {'$search': search};
         }
@@ -366,7 +366,7 @@ CrudController.prototype = {
         var select = reqParams['select'] ? reqParams.select.split(',') : []; //Comma seprated fileds list
         var query = this.model.findOne({
             '_id': reqParams['id'],
-            deleted: false
+            _deleted: false
         });
         if (select.length > 0) {
             query = query.select(select.join(' '));
@@ -422,7 +422,7 @@ CrudController.prototype = {
             '_id': {
                 '$in': ids
             },
-            'deleted': false
+            '_deleted': false
         };
         var self = this;
         var mq = this.model.find(query);
@@ -436,7 +436,7 @@ CrudController.prototype = {
         return new Promise((resolve, reject) => {
             self.model.findOne({
                 '_id': id,
-                deleted: false
+                _deleted: false
             }, function (err, doc) {
                 if (err) {
                     reject(err);
@@ -446,7 +446,6 @@ CrudController.prototype = {
                     var oldValues = doc.toObject();
                     var updated = _.mergeWith(doc, body, self._customizer);
                     updated = new self.model(updated);
-                    updated.__v++;
                     Object.keys(body).forEach(el => updated.markModified(el));
                     updated.save(req, function (err) {
                         if (err) {
@@ -543,7 +542,7 @@ CrudController.prototype = {
         let resSentFlag = false;
         return this.model.findOne({
                 '_id': reqParams['id'],
-                deleted: false
+                _deleted: false
             })
             .then(_document => {
                 if (!_document) {
@@ -554,7 +553,6 @@ CrudController.prototype = {
                 document = _document;
                 updated = _.mergeWith(_document, bodyData, self._customizer);
                 updated = new self.model(updated);
-                updated.__v++;
                 Object.keys(body).forEach(el => updated.markModified(el));
                 return updated.save(req);
             })
@@ -632,13 +630,13 @@ CrudController.prototype = {
         let document = null;
         return this.model.findOne({
                 '_id': reqParams['id'],
-                deleted: false
+                _deleted: false
             })
             .then(doc => {
                 if (!doc) {
                     return;
                 }
-                doc.deleted = true;
+                doc._deleted = true;
                 document = JSON.parse(JSON.stringify(doc));
                 return doc.save(req);
             })
@@ -666,7 +664,7 @@ CrudController.prototype = {
         debugLogReq(req, this.logger);
         return this.model.findOne({
             _id: queryObject['id'],
-            deleted: false
+            _deleted: false
         }).exec().then(result => {
             if (result) {
                 var snapshot = result.toObject({
