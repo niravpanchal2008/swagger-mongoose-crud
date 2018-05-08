@@ -415,7 +415,7 @@ CrudController.prototype = {
         var sort = {};
         debugLogReq(req, this.logger);
         var reqParams = params.map(req);
-        var ids = reqParams['id'].split(',');
+        var ids = reqParams['id'] ? reqParams['id'].split(',') : [];
         reqParams['sort'] ? reqParams.sort.split(',').map(el => sort[el] = 1) : null;
         var select = reqParams['select'] ? reqParams.select.split(',') : null;
         var query = {
@@ -473,7 +473,7 @@ CrudController.prototype = {
         var selectFields = Object.keys(body);
         var self = this;
         selectFields.push('_id');
-        var ids = reqParams['id'].split(','); //Ids will be comma seperated ID list
+        var ids = reqParams['id'] ? reqParams['id'].split(',') : []; //Ids will be comma seperated ID list
         var user = req.user ? req.user.username : req.headers['masterName'];
         var promises = ids.map(id => self._updateMapper(id, body, user, req));
         var promise = Promise.all(promises).then(result => {
