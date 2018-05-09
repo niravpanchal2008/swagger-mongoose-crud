@@ -58,44 +58,44 @@ function createDocument(model, body, req) {
         });
 }
 
-function removeDocument(doc, req, type){
-    return new Promise(resolve=>{
-        if(type == "markAsDeleted"){
+function removeDocument(doc, req, type) {
+    return new Promise(resolve => {
+        if (type == "markAsDeleted") {
             doc._deleted = true;
             doc.save(req)
-            .then(doc=>{
-                resolve(doc);
-            })
-            .catch(err=>resolve(null));
-        }else{
+                .then(doc => {
+                    resolve(doc);
+                })
+                .catch(err => resolve(null));
+        } else {
             doc.remove(req)
-            .then(()=>{
-                resolve(doc.toObject());
-            })
-            .catch(err=>resolve(null));
+                .then(() => {
+                    resolve(doc.toObject());
+                })
+                .catch(err => resolve(null));
         }
     });
 }
 
-function bulkRemove(self, req, res, type){
+function bulkRemove(self, req, res, type) {
     var reqParams = params.map(req);
     debugLogReq(req, self.logger);
     let document = null;
     var ids = reqParams['id'] ? reqParams['id'].split(',') : [];
     return self.model.find({
-            '_id': {"$in" : ids},
-            _deleted: false
-        })
+        '_id': { "$in": ids },
+        _deleted: false
+    })
         .then(docs => {
             if (!docs) {
                 return [];
             }
-            let removePromise = docs.map(doc=>removeDocument(doc, req, type));
+            let removePromise = docs.map(doc => removeDocument(doc, req, type));
             return Promise.all(removePromise);
         })
         .then((removedDocs) => {
-            removedDocs = removedDocs.filter(doc=>doc != null);
-            let removedIds = removedDocs.map(doc=>doc._id);
+            removedDocs = removedDocs.filter(doc => doc != null);
+            let removedIds = removedDocs.map(doc => doc._id);
             var logObject = {
                 'operation': 'Delete',
                 'user': req.user ? req.user.username : req.headers['masterName'],
@@ -104,11 +104,11 @@ function bulkRemove(self, req, res, type){
             };
             self.logger.debug(JSON.stringify(logObject));
             let docsNotRemoved = _.difference(_.uniq(ids), removedIds);
-            if(_.isEmpty(docsNotRemoved))
+            if (_.isEmpty(docsNotRemoved))
                 return self.Okay(res, {});
-            else{
-                throw new Error("Could not delete document with id "+ docsNotRemoved);
-            }    
+            else {
+                throw new Error("Could not delete document with id " + docsNotRemoved);
+            }
         })
         .catch(err => {
             return self.Error(res, err);
@@ -328,8 +328,8 @@ CrudController.prototype = {
             filter = _.omit(filter, this.omit);
         }
         filter._deleted = false;
-        if(search){
-            filter['$text'] = {'$search': search};
+        if (search) {
+            filter['$text'] = { '$search': search };
         }
         var query = this.model.find(filter);
 
@@ -445,6 +445,10 @@ CrudController.prototype = {
                 } else {
                     var oldValues = doc.toObject();
                     var updated = _.mergeWith(doc, body, self._customizer);
+                    if(_.isEqual(JSON.parse(JSON.stringify(oldValues)), JSON.parse(JSON.stringify(updated)))) {
+                        resolve(updated);
+                        return;
+                    }
                     updated = new self.model(updated);
                     Object.keys(body).forEach(el => updated.markModified(el));
                     updated.save(req, function (err) {
@@ -498,10 +502,10 @@ CrudController.prototype = {
                 values.length > 1 ? products.push(_.zipObject(keys, values)) : null;
             });
             return Promise.all(products.map(el => self._bulkPersist(el))).
-            then(result => {
-                res.status(200).json(result);
-                self.logger.debug("Sending Response:: " + JSON.stringify(result));
-            });
+                then(result => {
+                    res.status(200).json(result);
+                    self.logger.debug("Sending Response:: " + JSON.stringify(result));
+                });
         } catch (e) {
             res.status(400).json(e);
             self.logger.debug("Sending Response:: " + JSON.stringify(e));
@@ -541,9 +545,9 @@ CrudController.prototype = {
         let updated = null;
         let resSentFlag = false;
         return this.model.findOne({
-                '_id': reqParams['id'],
-                _deleted: false
-            })
+            '_id': reqParams['id'],
+            _deleted: false
+        })
             .then(_document => {
                 if (!_document) {
                     resSentFlag = true;
@@ -552,6 +556,7 @@ CrudController.prototype = {
                 oldValues = _document.toObject();
                 document = _document;
                 updated = _.mergeWith(_document, bodyData, self._customizer);
+                if (_.isEqual(JSON.parse(JSON.stringify(updated)), JSON.parse(JSON.stringify(oldValues)))) return;
                 updated = new self.model(updated);
                 Object.keys(body).forEach(el => updated.markModified(el));
                 return updated.save(req);
@@ -596,8 +601,8 @@ CrudController.prototype = {
         var self = this;
         let document = null;
         return this.model.findOne({
-                '_id': reqParams['id']
-            })
+            '_id': reqParams['id']
+        })
             .then(doc => {
                 if (!doc) {
                     return;
@@ -619,7 +624,7 @@ CrudController.prototype = {
                 return self.Error(res, err);
             })
     },
-    _bulkDestroy: function(req, res){
+    _bulkDestroy: function (req, res) {
         let self = this;
         bulkRemove(self, req, res, "destroy");
     },
@@ -629,9 +634,9 @@ CrudController.prototype = {
         var self = this;
         let document = null;
         return this.model.findOne({
-                '_id': reqParams['id'],
-                _deleted: false
-            })
+            '_id': reqParams['id'],
+            _deleted: false
+        })
             .then(doc => {
                 if (!doc) {
                     return;
@@ -676,11 +681,11 @@ CrudController.prototype = {
                 if (newResult && typeof newResult.then === 'function') {
                     //newResult is a promise, resolve it and then update.
                     return newResult.then(res => {
-                            self.model.findOneAndUpdate(snapshot, res, {
-                                upsert: false,
-                                runValidators: true
-                            });
-                        })
+                        self.model.findOneAndUpdate(snapshot, res, {
+                            upsert: false,
+                            runValidators: true
+                        });
+                    })
                         .exec()
                         .then(updated => {
                             if (!updated) {
@@ -692,9 +697,9 @@ CrudController.prototype = {
                 } else {
                     //newResult is a mongoose object
                     return self.model.findOneAndUpdate(snapshot, newResult, {
-                            upsert: false,
-                            runValidators: true
-                        })
+                        upsert: false,
+                        runValidators: true
+                    })
                         .exec()
                         .then(updated => {
                             if (!updated) {
