@@ -35,6 +35,16 @@ function debugLogReq(req, logger) {
     logger.debug("Getting Request::" + JSON.stringify(ob));
 }
 
+function saveDocument(docModel, req) {
+    return docModel.save(req)
+        .then(_d => {
+            return { statusCode: 200, message: _d }
+        })
+        .catch(err => {
+            return { statusCode: 400, message: { message: err.message } }
+        })
+}
+
 function createDocument(model, body, req) {
     let args = [];
     if (Array.isArray(body)) {
@@ -45,17 +55,9 @@ function createDocument(model, body, req) {
     let savePromise = [];
     args.forEach(doc => {
         let docModel = new model(doc);
-        savePromise.push(docModel.save(req));
+        savePromise.push(saveDocument(docModel, req));
     });
-    return Promise.all(savePromise)
-        .then(docs => {
-            if (docs) {
-                if (docs.length === 1)
-                    return docs[0];
-                return docs;
-            }
-            return;
-        });
+    return Promise.all(savePromise);
 }
 
 function removeDocument(doc, req, type) {
@@ -397,15 +399,29 @@ CrudController.prototype = {
         var payload = 'data';
         var body = params.map(req)[payload];
         return createDocument(self.model, body, req)
-            .then(document => {
+            .then(documents => {
                 var logObject = {
                     'operation': 'Create',
                     'user': req.user ? req.user.username : req.headers['masterName'],
-                    '_id': document._id,
+                    '_id': documents.filter(_d => _d.statusCode === 200).map(_d => _d.message._id),
                     'timestamp': new Date()
                 };
                 self.logger.debug(JSON.stringify(logObject));
-                return self.Okay(res, self.getResponseObject(document));
+                if (documents.some(_d => _d.statusCode === 400)) {
+                    if (Array.isArray(body))
+                        return res.status(400).json(documents.map(_doc => _doc.message));
+                    else {
+                        return res.status(400).json(documents[0].message)
+                    }
+                } else {
+                    if (Array.isArray(body)) {
+                        return self.Okay(res, self.getResponseObject(documents.map(_d => _d.message)));
+                    } else {
+                        return self.Okay(res, self.getResponseObject(documents[0].message));
+                    }
+
+                }
+
             })
             .catch(err => {
                 return self.Error(res, err);
@@ -445,7 +461,7 @@ CrudController.prototype = {
                 } else {
                     var oldValues = doc.toObject();
                     var updated = _.mergeWith(doc, body, self._customizer);
-                    if(_.isEqual(JSON.parse(JSON.stringify(oldValues)), JSON.parse(JSON.stringify(updated)))) {
+                    if (_.isEqual(JSON.parse(JSON.stringify(oldValues)), JSON.parse(JSON.stringify(updated)))) {
                         resolve(updated);
                         return;
                     }
