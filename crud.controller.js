@@ -63,7 +63,7 @@ function createDocument(model, body, req) {
 function removeDocument(doc, req, type) {
     return new Promise(resolve => {
         if (type == "markAsDeleted") {
-            doc._deleted = true;
+            doc._metadata.isDeleted = true;
             doc.save(req)
                 .then(doc => {
                     resolve(doc);
@@ -86,7 +86,7 @@ function bulkRemove(self, req, res, type) {
     var ids = reqParams['id'] ? reqParams['id'].split(',') : [];
     return self.model.find({
         '_id': { "$in": ids },
-        _deleted: false
+        '_metadata.isDeleted': false
     })
         .then(docs => {
             if (!docs) {
@@ -284,7 +284,7 @@ CrudController.prototype = {
         if (this.omit.length > 0) {
             filter = _.omit(filter, this.omit);
         }
-        filter._deleted = false;
+        filter['_metadata.isDeleted'] = false;
         return this.model
             .find(filter)
             .count()
@@ -307,7 +307,7 @@ CrudController.prototype = {
         debugLogReq(req, this.logger);
         var filter = reqParams['filter'] ? reqParams.filter : {};
         var sort = reqParams['sort'] ? {} : {
-            _lastUpdated: -1
+            '_metadata.lastUpdated': -1
         };
         reqParams['sort'] ? reqParams.sort.split(',').map(el => el.split('-').length > 1 ? sort[el.split('-')[1]] = -1 : sort[el.split('-')[0]] = 1) : null;
         var select = reqParams['select'] ? reqParams.select.split(',') : [];
@@ -329,7 +329,7 @@ CrudController.prototype = {
         if (this.omit.length) {
             filter = _.omit(filter, this.omit);
         }
-        filter._deleted = false;
+        filter['_metadata.isDeleted'] = false;
         if (search) {
             filter['$text'] = { '$search': search };
         }
@@ -368,7 +368,7 @@ CrudController.prototype = {
         var select = reqParams['select'] ? reqParams.select.split(',') : []; //Comma seprated fileds list
         var query = this.model.findOne({
             '_id': reqParams['id'],
-            _deleted: false
+            '_metadata.isDeleted': false
         });
         if (select.length > 0) {
             query = query.select(select.join(' '));
@@ -438,7 +438,7 @@ CrudController.prototype = {
             '_id': {
                 '$in': ids
             },
-            '_deleted': false
+            '_metadata.isDeleted': false
         };
         var self = this;
         var mq = this.model.find(query);
@@ -452,7 +452,7 @@ CrudController.prototype = {
         return new Promise((resolve, reject) => {
             self.model.findOne({
                 '_id': id,
-                _deleted: false
+                '_metadata.isDeleted': false
             }, function (err, doc) {
                 if (err) {
                     reject(err);
@@ -562,7 +562,7 @@ CrudController.prototype = {
         let resSentFlag = false;
         return this.model.findOne({
             '_id': reqParams['id'],
-            _deleted: false
+            '_metadata.isDeleted': false
         })
             .then(_document => {
                 if (!_document) {
@@ -651,13 +651,13 @@ CrudController.prototype = {
         let document = null;
         return this.model.findOne({
             '_id': reqParams['id'],
-            _deleted: false
+            '_metadata.isDeleted': false
         })
             .then(doc => {
                 if (!doc) {
                     return;
                 }
-                doc._deleted = true;
+                doc._metadata.isDeleted = true;
                 document = JSON.parse(JSON.stringify(doc));
                 return doc.save(req);
             })
@@ -685,7 +685,7 @@ CrudController.prototype = {
         debugLogReq(req, this.logger);
         return this.model.findOne({
             _id: queryObject['id'],
-            _deleted: false
+            '_metadata.isDeleted': false
         }).exec().then(result => {
             if (result) {
                 var snapshot = result.toObject({

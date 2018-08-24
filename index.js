@@ -53,46 +53,38 @@ MongooseModel.prototype = {
 
 function injectDefaults(schema) {
     schema.add({
-        _createdAt: {
+        '_metadata.lastUpdated': {
             type: Date,
             default: Date.now
-        }
-    });
-    schema.add({
-        _lastUpdated: {
+        },
+        '_metadata.createdAt': {
             type: Date,
             default: Date.now
-        }
-    });
-    schema.add({
-        _deleted: {
+        },
+        '_metadata.isDeleted': {
             type: Boolean,
             default: false
-        }
-    });
-    schema.add({
-        _version: {
-            type: Number,
+        },
+        '_metadata.version.document': {
+            type: 'Number',
             default: 0
         }
+
+    })
+    schema.index({
+        '_metadata.lastUpdated': 1
     });
     schema.index({
-        _lastUpdated: 1
-    });
-    schema.index({
-        _createdAt: 1
-    });
-    schema.index({
-        _version: 1
+        '_metadata.createdAt': 1
     });
     schema.pre('save', function (next) {
-        this._version++;
-        this._lastUpdated = new Date();
+        if (this._metadata && this._metadata.version) this._metadata.version.document++;
+        this._metadata.lastUpdated = new Date();
         next();
     });
     schema.pre('update', function (next) {
-        this._version++;
-        this._lastUpdated = new Date();
+        if (this._metadata && this._metadata.version) this._metadata.version.document++;
+        this._metadata.lastUpdated = new Date();
         next();
     });
     return schema;
