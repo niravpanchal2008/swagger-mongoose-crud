@@ -61,7 +61,7 @@ function injectDefaults(schema) {
             type: Date,
             default: Date.now
         },
-        '_metadata.isDeleted': {
+        '_metadata.deleted': {
             type: Boolean,
             default: false
         },

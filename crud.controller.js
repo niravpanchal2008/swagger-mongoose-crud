@@ -63,7 +63,7 @@ function createDocument(model, body, req) {
 function removeDocument(doc, req, type) {
     return new Promise(resolve => {
         if (type == "markAsDeleted") {
-            doc._metadata.isDeleted = true;
+            doc._metadata.deleted = true;
             doc.save(req)
                 .then(doc => {
                     resolve(doc);
@@ -86,7 +86,7 @@ function bulkRemove(self, req, res, type) {
     var ids = reqParams['id'] ? reqParams['id'].split(',') : [];
     return self.model.find({
         '_id': { "$in": ids },
-        '_metadata.isDeleted': false
+        '_metadata.deleted': false
     })
         .then(docs => {
             if (!docs) {
@@ -284,7 +284,7 @@ CrudController.prototype = {
         if (this.omit.length > 0) {
             filter = _.omit(filter, this.omit);
         }
-        filter['_metadata.isDeleted'] = false;
+        filter['_metadata.deleted'] = false;
         return this.model
             .find(filter)
             .count()
@@ -329,7 +329,7 @@ CrudController.prototype = {
         if (this.omit.length) {
             filter = _.omit(filter, this.omit);
         }
-        filter['_metadata.isDeleted'] = false;
+        filter['_metadata.deleted'] = false;
         if (search) {
             filter['$text'] = { '$search': search };
         }
@@ -368,7 +368,7 @@ CrudController.prototype = {
         var select = reqParams['select'] ? reqParams.select.split(',') : []; //Comma seprated fileds list
         var query = this.model.findOne({
             '_id': reqParams['id'],
-            '_metadata.isDeleted': false
+            '_metadata.deleted': false
         });
         if (select.length > 0) {
             query = query.select(select.join(' '));
@@ -438,7 +438,7 @@ CrudController.prototype = {
             '_id': {
                 '$in': ids
             },
-            '_metadata.isDeleted': false
+            '_metadata.deleted': false
         };
         var self = this;
         var mq = this.model.find(query);
@@ -452,7 +452,7 @@ CrudController.prototype = {
         return new Promise((resolve, reject) => {
             self.model.findOne({
                 '_id': id,
-                '_metadata.isDeleted': false
+                '_metadata.deleted': false
             }, function (err, doc) {
                 if (err) {
                     reject(err);
@@ -562,7 +562,7 @@ CrudController.prototype = {
         let resSentFlag = false;
         return this.model.findOne({
             '_id': reqParams['id'],
-            '_metadata.isDeleted': false
+            '_metadata.deleted': false
         })
             .then(_document => {
                 if (!_document) {
@@ -651,13 +651,13 @@ CrudController.prototype = {
         let document = null;
         return this.model.findOne({
             '_id': reqParams['id'],
-            '_metadata.isDeleted': false
+            '_metadata.deleted': false
         })
             .then(doc => {
                 if (!doc) {
                     return;
                 }
-                doc._metadata.isDeleted = true;
+                doc._metadata.deleted = true;
                 document = JSON.parse(JSON.stringify(doc));
                 return doc.save(req);
             })
@@ -685,7 +685,7 @@ CrudController.prototype = {
         debugLogReq(req, this.logger);
         return this.model.findOne({
             _id: queryObject['id'],
-            '_metadata.isDeleted': false
+            '_metadata.deleted': false
         }).exec().then(result => {
             if (result) {
                 var snapshot = result.toObject({
