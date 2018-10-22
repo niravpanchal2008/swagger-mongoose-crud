@@ -79,12 +79,12 @@ function injectDefaults(schema) {
     });
     schema.pre('save', function (next) {
         if (this._metadata && this._metadata.version) this._metadata.version.document++;
-        this._metadata.lastUpdated = new Date();
+        if(this._metadata) this._metadata.lastUpdated = new Date();
         next();
     });
     schema.pre('update', function (next) {
         if (this._metadata && this._metadata.version) this._metadata.version.document++;
-        this._metadata.lastUpdated = new Date();
+        if(this._metadata) this._metadata.lastUpdated = new Date();
         next();
     });
     return schema;
