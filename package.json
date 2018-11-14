@@ -1,6 +1,6 @@
 {
-  "name": "swagger-mongoose-crud",
-  "version": "2.0.0",
+  "name": "@appveen/swagger-mongoose-crud",
+  "version": "1.0.0",
   "description": "Swagger Mongoose crud wrapper",
   "main": "index.js",
   "scripts": {
@@ -12,11 +12,11 @@
     "mongodb",
     "swagger-node"
   ],
-  "author": "Abilash Mohan <abilash@capiot.com>",
+  "author": "Jerry M. <jerry@appveen.com>",
   "license": "MIT",
   "dependencies": {
     "lodash": "^4.17.4",
-    "log4js": "^2.4.1",
+    "log4js": "^3.0.6",
     "mongoose-unique-validator": "^2.0.1"
   },
   "devDependencies": {

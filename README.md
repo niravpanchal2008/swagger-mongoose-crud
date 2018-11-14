@@ -1,5 +1,5 @@
 # swagger-mongoose-crud
-[![Build Status](https://travis-ci.org/capiotsoftware/swagger-mongoose-crud.svg?branch=master)](https://travis-ci.org/capiotsoftware/swagger-mongoose-crud)
+[![Build Status](https://travis-ci.org/appveen/swagger-mongoose-crud.svg?branch=master)](https://travis-ci.org/appveen/swagger-mongoose-crud)
 
 A Simple wrapper for Swagger based mongoose CRUD operation. This plugin is a modfied version of the Mongoose CRUD operation introducted by [Micheal Krone](https://github.com/michaelkrone).
 
@@ -18,13 +18,13 @@ This module exposes following basic operations.
 
 ## Installation
 ``` sh
-npm install https://github.com/capiotsoftware/swagger-mongoose-crud.git --save
+npm install @appveen/swagger-mongoose-crud --save
 ```
 
 ## Usage 
 ```javascript
 var Mongoose = require('Mongoose');
-var SMCrud = require('swagger-mongoose-crud.git');
+var SMCrud = require('swagger-mongoose-crud');
 //In your controller, simply expose the following
 var schema = new Mongoose.Schema({ 
     //Your mongoose Schema definition here.
