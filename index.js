@@ -7,6 +7,13 @@ var logger = process.env.PROD_ENV ? log4js.getLogger('swagger-mongoose-crud') : 
 var logLevel = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : 'info';
 var params = require('./swagger.params.map');
 var uniqueValidator = require('mongoose-unique-validator');
+log4js.configure({
+    levels: {
+        AUDIT: { value: Number.MAX_VALUE - 1, colour: 'yellow' }
+    },
+    appenders: { out: { type: 'stdout', layout: { type: 'basic' } } },
+    categories: { default: { appenders: ['out'], level: logLevel.toUpperCase() } }
+});
 /**
  * Constructor function for MongooseModel
  * @classdesc Basic mongoose Model sytem
@@ -79,12 +86,12 @@ function injectDefaults(schema) {
     });
     schema.pre('save', function (next) {
         if (this._metadata && this._metadata.version) this._metadata.version.document++;
-        if(this._metadata) this._metadata.lastUpdated = new Date();
+        if (this._metadata) this._metadata.lastUpdated = new Date();
         next();
     });
     schema.pre('update', function (next) {
         if (this._metadata && this._metadata.version) this._metadata.version.document++;
-        if(this._metadata) this._metadata.lastUpdated = new Date();
+        if (this._metadata) this._metadata.lastUpdated = new Date();
         next();
     });
     return schema;
