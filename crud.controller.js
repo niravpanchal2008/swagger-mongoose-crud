@@ -35,17 +35,34 @@ function debugLogReq(req, logger) {
     logger.debug("Getting Request::" + JSON.stringify(ob));
 }
 
-function saveDocument(docModel, req) {
-    return docModel.save(req)
-        .then(_d => {
-            return { statusCode: 200, message: _d }
-        })
-        .catch(err => {
-            return { statusCode: 400, message: { message: err.message } }
-        })
+function saveDocument(doc, req, docIds, model, self, documents) {
+    let docModel = new model(doc);
+    if (docIds.indexOf(docModel._id) < 0) {
+        return docModel.save(req)
+            .then(_d => {
+                return { statusCode: 200, message: _d }
+            })
+            .catch(err => {
+                return { statusCode: 400, message: { message: err.message } }
+            })
+    }
+    else {
+        let _document = documents.find(_d => _d._id == doc._id);
+        let updated = _.mergeWith(_document, doc, self._customizer);
+        updated = new self.model(updated);
+        Object.keys(doc).forEach(el => updated.markModified(el));
+        return updated.save(req)
+            .then(_d => {
+                return { statusCode: 200, message: _d }
+            })
+            .catch(err => {
+                return { statusCode: 400, message: { message: err.message } }
+            })
+    }
+
 }
 
-function createDocument(model, body, req) {
+function createDocument(model, body, req, documents, self) {
     let args = [];
     if (Array.isArray(body)) {
         args = body;
@@ -53,9 +70,9 @@ function createDocument(model, body, req) {
         args.push(body);
     }
     let savePromise = [];
+    let docIds = documents.map(doc => doc._id);
     args.forEach(doc => {
-        let docModel = new model(doc);
-        savePromise.push(saveDocument(docModel, req));
+        savePromise.push(saveDocument(doc, req, docIds, model, self, documents));
     });
     return Promise.all(savePromise);
 }
@@ -397,8 +414,25 @@ CrudController.prototype = {
         var self = this;
         debugLogReq(req, this.logger);
         var payload = 'data';
+        var reqParams = params.map(req);
+        var upsert = reqParams['upsert'];
+        var docIds = [];
         var body = params.map(req)[payload];
-        return createDocument(self.model, body, req)
+        var promise = Promise.resolve([]);
+        if (upsert) {
+            if (Array.isArray(body)) {
+                docIds = body.map(doc => doc._id);
+                docIds = docIds.filter(docs => docs);
+            }
+            else if (typeof body == "object") {
+                docIds.push(body._id)
+            }
+            promise = self.model.find({ "_id": { "$in": docIds } });
+        }
+        return promise
+            .then(documents => {
+                return createDocument(self.model, body, req, documents, self)
+            })
             .then(documents => {
                 var logObject = {
                     'operation': 'Create',
