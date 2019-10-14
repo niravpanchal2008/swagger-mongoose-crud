@@ -31,7 +31,7 @@ function CrudController(model, logger, defaultFilter) {
 }
 
 function debugLogReq(req, logger) {
-    var ob = _.pick(req, ['baseUrl', 'body', 'hostname', 'params', 'path', 'query']);
+    var ob = _.pick(req, ['baseUrl', 'hostname', 'params', 'path', 'query']);
     logger.debug("Getting Request::" + JSON.stringify(ob));
 }
 
@@ -197,7 +197,7 @@ CrudController.prototype = {
      * @default Okay response.
      */
     Okay: function (res, data) {
-        this.logger.debug('Sending Response:: ' + JSON.stringify(data))
+        // this.logger.debug('Sending Response:: ' + JSON.stringify(data))
         res.status(200).json(data);
     },
     /**
@@ -269,9 +269,7 @@ CrudController.prototype = {
             res.status(400).json({
                 message: errors
             });
-            this.logger.debug('Sending Response:: ' + JSON.stringify({
-                message: errors
-            }));
+            // this.logger.debug('Sending Response:: ' + JSON.stringify({ message: errors }));
         } else {
             res.status(400).json({
                 message: [err.message]
@@ -532,7 +530,7 @@ CrudController.prototype = {
         var promises = ids.map(id => self._updateMapper(id, body, user, req));
         var promise = Promise.all(promises).then(result => {
             res.json(result);
-            self.logger.debug("Sending Response:: " + JSON.stringify(result));
+            // self.logger.debug("Sending Response:: " + JSON.stringify(result));
         }, err => {
             self.Error(res, err);
         });
@@ -554,11 +552,11 @@ CrudController.prototype = {
             return Promise.all(products.map(el => self._bulkPersist(el))).
                 then(result => {
                     res.status(200).json(result);
-                    self.logger.debug("Sending Response:: " + JSON.stringify(result));
+                    // self.logger.debug("Sending Response:: " + JSON.stringify(result));
                 });
         } catch (e) {
             res.status(400).json(e);
-            self.logger.debug("Sending Response:: " + JSON.stringify(e));
+            // self.logger.debug("Sending Response:: " + JSON.stringify(e));
         }
     },
     _bulkPersist: function (el) {
