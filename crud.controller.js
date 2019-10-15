@@ -614,9 +614,9 @@ CrudController.prototype = {
                 var logObject = {
                     'operation': 'Update',
                     'user': req.user ? req.user.username : req.headers['masterName'],
-                    'originalValues': oldValues,
+                    // 'originalValues': oldValues,
                     '_id': document._id,
-                    'newValues': body,
+                    // 'newValues': body,
                     'timestamp': new Date()
                 };
                 self.logger.debug(JSON.stringify(logObject));
