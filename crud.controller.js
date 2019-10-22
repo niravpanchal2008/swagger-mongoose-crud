@@ -329,6 +329,7 @@ CrudController.prototype = {
         var page = reqParams['page'] ? reqParams.page : 1;
         var count = reqParams['count'] ? reqParams.count : 10;
         var search = reqParams['search'] ? reqParams.search : null;
+        var metadata = req.query['metadata'] ? req.query.metadata.toLowerCase() == 'true' : false;
         var skip = count * (page - 1);
         var self = this;
         if (typeof filter === 'string') {
@@ -360,9 +361,39 @@ CrudController.prototype = {
         }
         if (count == -1) query.sort(sort)
         else query.skip(skip).limit(count).sort(sort);
+        let docs = null;
+        let matched = 0, totalCount = 0;
         return query.exec()
             .then(documents => {
-                return self.Okay(res, documents);
+                docs = documents;
+                let promise = Promise.resolve();
+                if (metadata) {
+                    promise = this.model.count(filter)
+                        .then(_c => {
+                            matched = _c;
+                            return this.model.count()
+                        })
+                        .then(_t => {
+                            totalCount = _t;
+                        })
+                }
+                return promise;
+
+            })
+            .then(() => {
+                if (metadata) {
+                    let resBody = {
+                        _metadata: {
+                            page,
+                            count,
+                            matched,
+                            totalCount
+                        },
+                        data: docs
+                    };
+                    return self.Okay(res, resBody);
+                }
+                return self.Okay(res, docs);
             })
             .catch(err => {
                 return self.Error(res, err);
