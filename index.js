@@ -84,6 +84,9 @@ function injectDefaults(schema) {
     schema.index({
         '_metadata.createdAt': 1
     });
+    schema.index({
+        '_metadata.deleted': 1
+    });
     schema.pre('save', function (next) {
         if (this._metadata && this._metadata.version) this._metadata.version.document++;
         if (this._metadata) this._metadata.lastUpdated = new Date();
