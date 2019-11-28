@@ -314,10 +314,11 @@ CrudController.prototype = {
      * query object for the find method.
      * @param {IncomingMessage} req - The request message object
      * @param {ServerResponse} res - The outgoing response object the result is set to
+     * @param {Object} options - The options to manipulate response before sending.
      * @returns {ServerResponse} Array of all documents for the {@link CrudController#model} model
      * or the empty Array if no documents have been found
      */
-    _index: function (req, res) {
+    _index: function (req, res, options) {
         var reqParams = params.map(req);
         debugLogReq(req, this.logger);
         var filter = reqParams['filter'] ? reqParams.filter : {};
@@ -363,6 +364,7 @@ CrudController.prototype = {
         else query.skip(skip).limit(count).sort(sort);
         let docs = null;
         let matched = 0, totalCount = 0;
+        let resBody = {};
         return query.exec()
             .then(documents => {
                 docs = documents;
@@ -378,11 +380,10 @@ CrudController.prototype = {
                         })
                 }
                 return promise;
-
             })
             .then(() => {
                 if (metadata) {
-                    let resBody = {
+                    resBody = {
                         _metadata: {
                             page,
                             count,
@@ -391,11 +392,34 @@ CrudController.prototype = {
                         },
                         data: docs
                     };
-                    return self.Okay(res, resBody);
+                } else {
+                    resBody = docs;
                 }
-                return self.Okay(res, docs);
+                if (options && options.resHandler && typeof options.resHandler == 'function') {
+                    let resVal = options.resHandler(undefined, res, resBody, 200);
+                    if (!res.headersSent) {
+                        if (resVal instanceof Promise) {
+                            return resval.then(_docs => self.Okay(res, _docs))
+                        } else {
+                            return self.Okay(res, resVal)
+                        }
+                    }
+                    return;
+                }
+                return self.Okay(res, resBody);
             })
             .catch(err => {
+                if (options && options.resHandler && typeof options.resHandler == 'function') {
+                    let resVal = options.resHandler(err, res);
+                    if (!res.headersSent) {
+                        if (resVal instanceof Promise) {
+                            return resval.then(_docs => self.Error(res, _docs ? docs : err))
+                        } else {
+                            return self.Error(res, resVal ? resVal : err)
+                        }
+                    }
+                    return;
+                }
                 return self.Error(res, err);
             });
     },
@@ -405,9 +429,10 @@ CrudController.prototype = {
      * by using the {@link CrudController#idName} property.
      * @param {IncomingMessage} req - The request message object the id is read from
      * @param {ServerResponse} res - The outgoing response object
+     * @param {Object} options - The options to manipulate response before sending.
      * @returns {ServerResponse} A single document or NOT FOUND if no document has been found
      */
-    _show: function (req, res) {
+    _show: function (req, res, options) {
         var self = this;
         debugLogReq(req, this.logger);
         var reqParams = params.map(req);
@@ -421,13 +446,36 @@ CrudController.prototype = {
         }
         return query.exec()
             .then((document) => {
+                if (options && options.resHandler && typeof options.resHandler == 'function') {
+                    let resVal = options.resHandler(undefined, res, document ? document : "", document ? 200 : 404);
+                    if (!res.headersSent) {
+                        if (resVal instanceof Promise) {
+                            return resval.then(_docs => self.Okay(res, _docs))
+                        } else {
+                            return self.Okay(res, resVal)
+                        }
+                    }
+                    return;
+                }
                 if (!document) {
                     return self.NotFound(res);
                 } else {
                     return self.Okay(res, self.getResponseObject(document));
                 }
+
             })
             .catch(err => {
+                if (options && options.resHandler && typeof options.resHandler == 'function') {
+                    let resVal = options.resHandler(err, res);
+                    if (!res.headersSent) {
+                        if (resVal instanceof Promise) {
+                            return resval.then(_docs => self.Error(res, _docs ? docs : err))
+                        } else {
+                            return self.Error(res, resVal ? resVal : err)
+                        }
+                    }
+                    return;
+                }
                 return self.Error(res, err);
             });
 
