@@ -134,6 +134,34 @@ function bulkRemove(self, req, res, type) {
         });
 }
 
+let invalidAggregationKeys = [
+    '$graphLookup',
+    '$lookup',
+    '$merge',
+    '$out',
+    '$currentOp',
+    '$collStats',
+    '$indexStats',
+    '$planCacheStats',
+    '$listLocalSessions',
+    '$listSessions'
+];
+
+function validateAggregation(body) {
+    if (!body) return true;
+    if (Array.isArray(body)) {
+        return body.every(_b => validateAggregation(_b));
+    }
+    if (body.constructor == {}.constructor) {
+        return Object.keys(body).every(_k => {
+            let flag = invalidAggregationKeys.indexOf(_k) === -1;
+            if (!flag) throw new Error(_k + ' is restricted.');
+            return flag && validateAggregation(body[_k]);
+        });
+    }
+    return true;
+}
+
 CrudController.prototype = {
 
     /**
@@ -481,6 +509,56 @@ CrudController.prototype = {
 
     },
 
+    /**
+     * Runs aggregation on a collection. The API need request body as aggregation body.
+     * @param {IncomingMessage} req - The request message object
+     * @param {ServerResponse} res - The outgoing response object the result is set to
+     * @param {Object} options - The options to manipulate response before sending.
+     * @returns {ServerResponse} Array of all documents for the {@link CrudController#model} model
+     * or the empty Array if no documents have been found
+     */
+    _aggregate: function (req, res, options) {
+        var self = this;
+        debugLogReq(req, this.logger);
+        let aggBody = req.body;
+        let promise = Promise.resolve();
+        try {
+            let flag = validateAggregation(aggBody);
+            if (!flag) promise = Promise.reject(new Error('Invalid key in aggregation body'));
+        }
+        catch (err) {
+            promise = Promise.reject(err);
+        }
+        return promise.then(() => this.model.aggregate(aggBody))
+            .then(documents => {
+                if (options && options.resHandler && typeof options.resHandler == 'function') {
+                    let resVal = options.resHandler(undefined, res, documents, 200);
+                    if (!res.headersSent) {
+                        if (resVal instanceof Promise) {
+                            return resval.then(_docs => self.Okay(res, _docs))
+                        } else {
+                            return self.Okay(res, resVal)
+                        }
+                    }
+                    return;
+                }
+                return self.Okay(res, documents);
+            })
+            .catch(err => {
+                if (options && options.resHandler && typeof options.resHandler == 'function') {
+                    let resVal = options.resHandler(err, res);
+                    if (!res.headersSent) {
+                        if (resVal instanceof Promise) {
+                            return resval.then(_docs => self.Error(res, _docs ? docs : err))
+                        } else {
+                            return self.Error(res, resVal ? resVal : err)
+                        }
+                    }
+                    return;
+                }
+                return self.Error(res, err);
+            });
+    },
     /**
      * Creates a new document in the DB.
      * @param {IncomingMessage} req - The request message object containing the json document data

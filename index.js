@@ -34,6 +34,7 @@ function MongooseModel(schema, modelName, options) {
     this.model = mongoose.model(modelName, this.schema, options.collectionName);
     ParamController.call(this, this.model, modelName, logger, defaultFilter);
     this.index = this._index.bind(this);
+    this.aggregate = this._aggregate.bind(this);
     this.create = this._create.bind(this);
     this.show = this._show.bind(this);
     this.update = this._update.bind(this);
