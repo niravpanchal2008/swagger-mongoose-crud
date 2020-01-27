@@ -6,7 +6,6 @@ var log4js = require('log4js');
 var logger = process.env.PROD_ENV ? log4js.getLogger('swagger-mongoose-crud') : log4js.getLogger('swagger-mongoose-crud-dev');
 var logLevel = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : 'info';
 var params = require('./swagger.params.map');
-var uniqueValidator = require('mongoose-unique-validator');
 log4js.configure({
     levels: {
         AUDIT: { value: Number.MAX_VALUE - 1, colour: 'yellow' }
@@ -30,7 +29,6 @@ function MongooseModel(schema, modelName, options) {
     logger = options.logger ? options.logger : logger;
     logger.level = logLevel;
     let defaultFilter = options.defaultFilter ? options.defaultFilter : {};
-    schema.plugin(uniqueValidator);
     this.model = mongoose.model(modelName, this.schema, options.collectionName);
     ParamController.call(this, this.model, modelName, logger, defaultFilter);
     this.index = this._index.bind(this);
