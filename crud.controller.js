@@ -597,10 +597,12 @@ CrudController.prototype = {
                 };
                 self.logger.debug(JSON.stringify(logObject));
                 if (documents.some(_d => _d.statusCode === 400)) {
-                    if (Array.isArray(body))
-                        return res.status(400).json(documents.map(_doc => _doc.message));
-                    else {
-                        return res.status(400).json(documents[0].message)
+                    if (Array.isArray(body)) {
+                        var result = documents.map(_doc => _doc.message);
+                        res.write(JSON.stringify(result));
+                        return res.status(400).end();
+                    } else {
+                        return res.status(400).json(documents[0].message);
                     }
                 } else {
                     if (Array.isArray(body)) {
@@ -608,9 +610,7 @@ CrudController.prototype = {
                     } else {
                         return self.Okay(res, self.getResponseObject(documents[0].message));
                     }
-
                 }
-
             })
             .catch(err => {
                 return self.Error(res, err);
