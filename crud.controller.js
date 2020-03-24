@@ -656,6 +656,7 @@ CrudController.prototype = {
                     }
                     updated = new self.model(updated);
                     Object.keys(body).forEach(el => updated.markModified(el));
+                    updated._oldDoc = JSON.parse(JSON.stringify(oldValues));
                     updated.save(req, function (err) {
                         if (err) {
                             reject(err);
@@ -764,6 +765,7 @@ CrudController.prototype = {
                 if (_.isEqual(JSON.parse(JSON.stringify(updated)), JSON.parse(JSON.stringify(oldValues)))) return;
                 updated = new self.model(updated);
                 Object.keys(body).forEach(el => updated.markModified(el));
+                updated._oldDoc = JSON.parse(JSON.stringify(oldValues));
                 return updated.save(req);
             })
             .then(() => {
