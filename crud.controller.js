@@ -427,7 +427,7 @@ CrudController.prototype = {
                     let resVal = options.resHandler(undefined, res, resBody, 200);
                     if (!res.headersSent) {
                         if (resVal instanceof Promise) {
-                            return resval.then(_docs => self.Okay(res, _docs))
+                            return resVal.then(_docs => self.Okay(res, _docs))
                         } else {
                             return self.Okay(res, resVal)
                         }
