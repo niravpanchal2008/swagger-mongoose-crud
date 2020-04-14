@@ -753,17 +753,18 @@ CrudController.prototype = {
         return this.model.findOne({
             '_id': reqParams['id'],
             '_metadata.deleted': false
-        })
+        }).lean()
             .then(_document => {
                 if (!_document) {
                     resSentFlag = true;
                     return self.NotFound(res);
                 }
-                oldValues = _document.toObject();
+                oldValues =  Object.assign({}, _document)
                 document = _document;
                 updated = _.mergeWith(_document, bodyData, self._customizer);
                 if (_.isEqual(JSON.parse(JSON.stringify(updated)), JSON.parse(JSON.stringify(oldValues)))) return;
                 updated = new self.model(updated);
+                updated.isNew = false;
                 Object.keys(body).forEach(el => updated.markModified(el));
                 updated._oldDoc = JSON.parse(JSON.stringify(oldValues));
                 return updated.save(req);
