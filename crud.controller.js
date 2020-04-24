@@ -35,6 +35,20 @@ function debugLogReq(req, logger) {
     logger.debug("Getting Request::" + JSON.stringify(ob));
 }
 
+async function handleSession(session, abortTransaction) {
+    if (abortTransaction) await session.abortTransaction();
+    else await session.commitTransaction();
+    session.endSession();
+}
+async function getMongoDbVersion() {
+    return (await mongoose.connection.db.admin().serverInfo()).version;
+}
+async function isTransactionSupported() {
+    let version = await getMongoDbVersion();
+    let minorVersion = parseFloat(version.substring(0, version.lastIndexOf('.')));
+    return minorVersion >= 4.2;
+}
+
 function saveDocument(doc, req, docIds, model, self, documents) {
     let docModel = new model(doc);
     if (docIds.indexOf(docModel._id) < 0) {
@@ -573,6 +587,8 @@ CrudController.prototype = {
         var upsert = reqParams['upsert'];
         var docIds = [];
         var body = params.map(req)[payload];
+        var restrictOnError = reqParams['restrictOnError'] && Array.isArray(body);
+        var session;
         var promise = Promise.resolve([]);
         if (upsert) {
             if (Array.isArray(body)) {
@@ -585,7 +601,17 @@ CrudController.prototype = {
             promise = self.model.find({ "_id": { "$in": docIds } });
         }
         return promise
-            .then(documents => {
+            .then(async documents => {
+                if (restrictOnError) {
+                    var startSession = await isTransactionSupported(self, res);
+                    if (startSession) {
+                        req.session = session = await self.model.startSession();
+                        this.logger.info('Creating transaction for bulk post');
+                        session.startTransaction();
+                    } else {
+                        throw new Error(`Your current mongoDb version doesn't support transactions.Please updgrade mongoDb to 4.2 or above.`)
+                    }
+                }
                 return createDocument(self.model, body, req, documents, self)
             })
             .then(documents => {
@@ -599,13 +625,21 @@ CrudController.prototype = {
                 if (documents.some(_d => _d.statusCode === 400)) {
                     if (Array.isArray(body)) {
                         var result = documents.map(_doc => _doc.message);
-                        res.write(JSON.stringify(result));
-                        return res.status(400).end();
+                        if (restrictOnError && session) {
+                            handleSession(session, true);
+                            result.forEach(rs => {
+                                if (rs._id) rs._doc.rollback = true;
+                            });
+                            return res.status(400).json(result);
+                        } else {
+                            return res.status(207).json(result);
+                        }
                     } else {
                         return res.status(400).json(documents[0].message);
                     }
                 } else {
                     if (Array.isArray(body)) {
+                        if (restrictOnError && session) handleSession(session, false);
                         return self.Okay(res, self.getResponseObject(documents.map(_d => _d.message)));
                     } else {
                         return self.Okay(res, self.getResponseObject(documents[0].message));
@@ -759,7 +793,7 @@ CrudController.prototype = {
                     resSentFlag = true;
                     return self.NotFound(res);
                 }
-                oldValues =  Object.assign({}, _document)
+                oldValues = Object.assign({}, _document)
                 document = _document;
                 updated = _.mergeWith(_document, bodyData, self._customizer);
                 if (_.isEqual(JSON.parse(JSON.stringify(updated)), JSON.parse(JSON.stringify(oldValues)))) return;
