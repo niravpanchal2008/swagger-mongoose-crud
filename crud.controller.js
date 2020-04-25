@@ -7,6 +7,12 @@ var params = require('./swagger.params.map');
 var mongoose = require('mongoose');
 
 
+const transactionOptions = {
+    readPreference: 'primary',
+    readConcern: { level: 'majority' },
+    writeConcern: { w: 'majority' }
+}
+
 /**
  * Constructor function for CrudController.
  * @classdesc Controller for basic CRUD operations on mongoose models.
@@ -587,7 +593,7 @@ CrudController.prototype = {
         var upsert = reqParams['upsert'];
         var docIds = [];
         var body = params.map(req)[payload];
-        var restrictOnError = reqParams['restrictOnError'] && Array.isArray(body);
+        var abortOnError = reqParams['abortOnError'] && Array.isArray(body);
         var session;
         var promise = Promise.resolve([]);
         if (upsert) {
@@ -602,12 +608,12 @@ CrudController.prototype = {
         }
         return promise
             .then(async documents => {
-                if (restrictOnError) {
+                if (abortOnError) {
                     var startSession = await isTransactionSupported(self, res);
                     if (startSession) {
                         req.session = session = await self.model.startSession();
                         this.logger.info('Creating transaction for bulk post');
-                        session.startTransaction();
+                        session.startTransaction(transactionOptions);
                     } else {
                         throw new Error(`Your current mongoDb version doesn't support transactions.Please updgrade mongoDb to 4.2 or above.`)
                     }
@@ -625,7 +631,7 @@ CrudController.prototype = {
                 if (documents.some(_d => _d.statusCode === 400)) {
                     if (Array.isArray(body)) {
                         var result = documents.map(_doc => _doc.message);
-                        if (restrictOnError && session) {
+                        if (abortOnError && session) {
                             handleSession(session, true);
                             result.forEach(rs => {
                                 if (rs._id) rs._doc.rollback = true;
@@ -639,7 +645,7 @@ CrudController.prototype = {
                     }
                 } else {
                     if (Array.isArray(body)) {
-                        if (restrictOnError && session) handleSession(session, false);
+                        if (abortOnError && session) handleSession(session, false);
                         return self.Okay(res, self.getResponseObject(documents.map(_d => _d.message)));
                     } else {
                         return self.Okay(res, self.getResponseObject(documents[0].message));
