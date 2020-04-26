@@ -633,9 +633,8 @@ CrudController.prototype = {
                         var result = documents.map(_doc => _doc.message);
                         if (abortOnError && session) {
                             handleSession(session, true);
-                            result.forEach(rs => {
-                                if (rs._id) rs._doc.rollback = true;
-                            });
+                            return res.status(400).json(result);
+                        }  else if((documents.every(_d => _d.statusCode === 400))) {
                             return res.status(400).json(result);
                         } else {
                             return res.status(207).json(result);
