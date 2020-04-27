@@ -593,7 +593,7 @@ CrudController.prototype = {
         var upsert = reqParams['upsert'];
         var docIds = [];
         var body = params.map(req)[payload];
-        var abortOnError = reqParams['abortOnError'] && Array.isArray(body);
+        // var abortOnError = reqParams['abortOnError'] && Array.isArray(body);
         var session;
         var promise = Promise.resolve([]);
         if (upsert) {
@@ -608,16 +608,16 @@ CrudController.prototype = {
         }
         return promise
             .then(async documents => {
-                if (abortOnError) {
-                    var startSession = await isTransactionSupported(self, res);
-                    if (startSession) {
-                        req.session = session = await self.model.startSession();
-                        this.logger.info('Creating transaction for bulk post');
-                        session.startTransaction(transactionOptions);
-                    } else {
-                        throw new Error(`Your current mongoDb version doesn't support transactions.Please updgrade mongoDb to 4.2 or above.`)
-                    }
-                }
+                // if (abortOnError) {
+                //     var startSession = await isTransactionSupported(self, res);
+                //     if (startSession) {
+                //         req.session = session = await self.model.startSession();
+                //         this.logger.info('Creating transaction for bulk post');
+                //         session.startTransaction(transactionOptions);
+                //     } else {
+                //         throw new Error(`Your current mongoDb version doesn't support transactions.Please updgrade mongoDb to 4.2 or above.`)
+                //     }
+                // }
                 return createDocument(self.model, body, req, documents, self)
             })
             .then(documents => {
@@ -631,10 +631,11 @@ CrudController.prototype = {
                 if (documents.some(_d => _d.statusCode === 400)) {
                     if (Array.isArray(body)) {
                         var result = documents.map(_doc => _doc.message);
-                        if (abortOnError && session) {
-                            handleSession(session, true);
-                            return res.status(400).json(result);
-                        }  else if((documents.every(_d => _d.statusCode === 400))) {
+                        // if (abortOnError && session) {
+                        //     handleSession(session, true);
+                        //     return res.status(400).json(result);
+                        // }  else
+                         if((documents.every(_d => _d.statusCode === 400))) {
                             return res.status(400).json(result);
                         } else {
                             return res.status(207).json(result);
@@ -644,7 +645,7 @@ CrudController.prototype = {
                     }
                 } else {
                     if (Array.isArray(body)) {
-                        if (abortOnError && session) handleSession(session, false);
+                        // if (abortOnError && session) handleSession(session, false);
                         return self.Okay(res, self.getResponseObject(documents.map(_d => _d.message)));
                     } else {
                         return self.Okay(res, self.getResponseObject(documents[0].message));
