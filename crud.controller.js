@@ -635,7 +635,7 @@ CrudController.prototype = {
                         //     handleSession(session, true);
                         //     return res.status(400).json(result);
                         // }  else
-                         if((documents.every(_d => _d.statusCode === 400))) {
+                        if ((documents.every(_d => _d.statusCode === 400))) {
                             return res.status(400).json(result);
                         } else {
                             return res.status(207).json(result);
@@ -799,7 +799,7 @@ CrudController.prototype = {
                     resSentFlag = true;
                     return self.NotFound(res);
                 }
-                oldValues = Object.assign({}, _document)
+                oldValues = JSON.parse(JSON.stringify(_document));
                 document = _document;
                 updated = _.mergeWith(_document, bodyData, self._customizer);
                 if (_.isEqual(JSON.parse(JSON.stringify(updated)), JSON.parse(JSON.stringify(oldValues)))) return;
