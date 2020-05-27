@@ -684,14 +684,14 @@ CrudController.prototype = {
                 '_metadata.deleted': false
             }, function (err, doc) {
                 if (err) {
-                    reject(err);
+                    resolve({ status: 400, message: err.message });
                 } else if (!doc) {
-                    reject(new Error('Document not found'));
+                    resolve({ status: 404, message: 'Document not found' });
                 } else {
                     var oldValues = doc.toObject();
                     var updated = _.mergeWith(doc, body, self._customizer);
                     if (_.isEqual(JSON.parse(JSON.stringify(oldValues)), JSON.parse(JSON.stringify(updated)))) {
-                        resolve(updated);
+                        resolve({ status: 200, message: updated });
                         return;
                     }
                     updated = new self.model(updated);
@@ -699,7 +699,7 @@ CrudController.prototype = {
                     updated._oldDoc = JSON.parse(JSON.stringify(oldValues));
                     updated.save(req, function (err) {
                         if (err) {
-                            reject(err);
+                            return resolve({ status: 400, message: err.message });
                         }
                         var logObject = {
                             'operation': 'Update',
@@ -710,7 +710,7 @@ CrudController.prototype = {
                             'timestamp': new Date()
                         };
                         self.logger.debug(JSON.stringify(logObject));
-                        resolve(updated);
+                        resolve({ status: 200, message: updated });
                     });
                 }
             }).exec();
@@ -727,10 +727,13 @@ CrudController.prototype = {
         var user = req.user ? req.user.username : req.headers['masterName'];
         var promises = ids.map(id => self._updateMapper(id, body, user, req));
         var promise = Promise.all(promises).then(result => {
-            if (result && result.every(e => e._id)) {
-                res.json(result);
+            const resultData = result.map(e => e.message);
+            if (result && result.every(e => e.status == 200)) {
+                res.json(resultData);
+            } else if (result && result.every(e => e.status != 200)) {
+                res.status(400).json(resultData);
             } else {
-                res.status(207).json(result);
+                res.status(207).json(resultData);
             }
             // self.logger.debug("Sending Response:: " + JSON.stringify(result));
         }, err => {
