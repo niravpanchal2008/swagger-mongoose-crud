@@ -684,14 +684,14 @@ CrudController.prototype = {
                 '_metadata.deleted': false
             }, function (err, doc) {
                 if (err) {
-                    resolve({ status: 400, message: err.message });
+                    resolve({ status: 400, data: { message: err.message } });
                 } else if (!doc) {
-                    resolve({ status: 404, message: 'Document not found' });
+                    resolve({ status: 404, data: { message: 'Document not found' } });
                 } else {
                     var oldValues = doc.toObject();
                     var updated = _.mergeWith(doc, body, self._customizer);
                     if (_.isEqual(JSON.parse(JSON.stringify(oldValues)), JSON.parse(JSON.stringify(updated)))) {
-                        resolve({ status: 200, message: updated });
+                        resolve({ status: 200, data: updated });
                         return;
                     }
                     updated = new self.model(updated);
@@ -699,7 +699,7 @@ CrudController.prototype = {
                     updated._oldDoc = JSON.parse(JSON.stringify(oldValues));
                     updated.save(req, function (err) {
                         if (err) {
-                            return resolve({ status: 400, message: err.message });
+                            return resolve({ status: 400, data: { message: err.message } });
                         }
                         var logObject = {
                             'operation': 'Update',
@@ -710,7 +710,7 @@ CrudController.prototype = {
                             'timestamp': new Date()
                         };
                         self.logger.debug(JSON.stringify(logObject));
-                        resolve({ status: 200, message: updated });
+                        resolve({ status: 200, data: updated });
                     });
                 }
             }).exec();
@@ -727,7 +727,7 @@ CrudController.prototype = {
         var user = req.user ? req.user.username : req.headers['masterName'];
         var promises = ids.map(id => self._updateMapper(id, body, user, req));
         var promise = Promise.all(promises).then(result => {
-            const resultData = result.map(e => e.message);
+            const resultData = result.map(e => e.data);
             if (result && result.every(e => e.status == 200)) {
                 res.json(resultData);
             } else if (result && result.every(e => e.status != 200)) {
