@@ -727,7 +727,11 @@ CrudController.prototype = {
         var user = req.user ? req.user.username : req.headers['masterName'];
         var promises = ids.map(id => self._updateMapper(id, body, user, req));
         var promise = Promise.all(promises).then(result => {
-            res.json(result);
+            if (result && result.every(e => e._id)) {
+                res.json(result);
+            } else {
+                res.status(207).json(result);
+            }
             // self.logger.debug("Sending Response:: " + JSON.stringify(result));
         }, err => {
             self.Error(res, err);
