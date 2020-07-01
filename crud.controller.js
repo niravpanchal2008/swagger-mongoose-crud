@@ -461,7 +461,7 @@ CrudController.prototype = {
                     let resVal = options.resHandler(err, res);
                     if (!res.headersSent) {
                         if (resVal instanceof Promise) {
-                            return resval.then(_docs => self.Error(res, _docs ? docs : err))
+                            return resVal.then(_docs => self.Error(res, _docs ? docs : err))
                         } else {
                             return self.Error(res, resVal ? resVal : err)
                         }
@@ -498,7 +498,7 @@ CrudController.prototype = {
                     let resVal = options.resHandler(undefined, res, document ? document : "", document ? 200 : 404);
                     if (!res.headersSent) {
                         if (resVal instanceof Promise) {
-                            return resval.then(_docs => self.Okay(res, _docs))
+                            return resVal.then(_docs => self.Okay(res, _docs))
                         } else {
                             return self.Okay(res, resVal)
                         }
@@ -517,7 +517,7 @@ CrudController.prototype = {
                     let resVal = options.resHandler(err, res);
                     if (!res.headersSent) {
                         if (resVal instanceof Promise) {
-                            return resval.then(_docs => self.Error(res, _docs ? docs : err))
+                            return resVal.then(_docs => self.Error(res, _docs ? docs : err))
                         } else {
                             return self.Error(res, resVal ? resVal : err)
                         }
@@ -555,7 +555,7 @@ CrudController.prototype = {
                     let resVal = options.resHandler(undefined, res, documents, 200);
                     if (!res.headersSent) {
                         if (resVal instanceof Promise) {
-                            return resval.then(_docs => self.Okay(res, _docs))
+                            return resVal.then(_docs => self.Okay(res, _docs))
                         } else {
                             return self.Okay(res, resVal)
                         }
@@ -569,7 +569,7 @@ CrudController.prototype = {
                     let resVal = options.resHandler(err, res);
                     if (!res.headersSent) {
                         if (resVal instanceof Promise) {
-                            return resval.then(_docs => self.Error(res, _docs ? docs : err))
+                            return resVal.then(_docs => self.Error(res, _docs ? docs : err))
                         } else {
                             return self.Error(res, resVal ? resVal : err)
                         }
