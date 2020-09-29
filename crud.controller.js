@@ -38,7 +38,7 @@ function CrudController(model, logger, defaultFilter) {
 
 function debugLogReq(req, logger) {
     var ob = _.pick(req, ['baseUrl', 'hostname', 'params', 'path', 'query']);
-    logger.debug("Getting Request::" + JSON.stringify(ob));
+    logger.trace("Getting Request::" + JSON.stringify(ob));
 }
 
 async function handleSession(session, abortTransaction) {
