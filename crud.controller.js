@@ -141,7 +141,7 @@ function bulkRemove(self, req, res, type) {
                 '_id': removedIds,
                 'timestamp': new Date()
             };
-            self.logger.debug(JSON.stringify(logObject));
+            self.logger.trace(JSON.stringify(logObject));
             let docsNotRemoved = _.difference(_.uniq(ids), removedIds);
             if (_.isEmpty(docsNotRemoved))
                 return self.Okay(res, {});
@@ -237,7 +237,7 @@ CrudController.prototype = {
     defaultReturn: '',
     debugLogger: function (doc, body) {
         var intersection = _.pick(doc, _.keysIn(body));
-        this.logger.debug('Object with id :-' + doc._id + ' has been updated, old values:-' + JSON.stringify(intersection) + ' new values:- ' + JSON.stringify(body));
+        this.logger.trace('Object with id :-' + doc._id + ' has been updated, old values:-' + JSON.stringify(intersection) + ' new values:- ' + JSON.stringify(body));
     },
     /**
      * Default Data handlers for Okay Response
@@ -627,7 +627,7 @@ CrudController.prototype = {
                     '_id': documents.filter(_d => _d.statusCode === 200).map(_d => _d.message._id),
                     'timestamp': new Date()
                 };
-                self.logger.debug(JSON.stringify(logObject));
+                self.logger.trace(JSON.stringify(logObject));
                 if (documents.some(_d => _d.statusCode === 400)) {
                     if (Array.isArray(body)) {
                         var result = documents.map(_doc => _doc.message);
@@ -709,7 +709,7 @@ CrudController.prototype = {
                             'newValues': body,
                             'timestamp': new Date()
                         };
-                        self.logger.debug(JSON.stringify(logObject));
+                        self.logger.trace(JSON.stringify(logObject));
                         resolve({ status: 200, data: updated });
                     });
                 }
@@ -826,7 +826,7 @@ CrudController.prototype = {
                     // 'newValues': body,
                     'timestamp': new Date()
                 };
-                self.logger.debug(JSON.stringify(logObject));
+                self.logger.trace(JSON.stringify(logObject));
                 return self.Okay(res, self.getResponseObject(updated));
             })
             .catch(err => {
@@ -872,7 +872,7 @@ CrudController.prototype = {
                     '_id': reqParams['id'],
                     'timestamp': new Date()
                 };
-                self.logger.debug(JSON.stringify(logObject));
+                self.logger.trace(JSON.stringify(logObject));
                 return self.Okay(res, {});
             })
             .catch(err => {
@@ -907,7 +907,7 @@ CrudController.prototype = {
                     '_id': document._id,
                     'timestamp': new Date()
                 };
-                self.logger.debug(JSON.stringify(logObject));
+                self.logger.trace(JSON.stringify(logObject));
                 return self.Okay(res, {});
             })
             .catch(err => {
