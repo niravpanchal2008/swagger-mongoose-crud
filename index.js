@@ -29,8 +29,9 @@ function MongooseModel(schema, modelName, options) {
     logger = options.logger ? options.logger : logger;
     logger.level = logLevel;
     let defaultFilter = options.defaultFilter ? options.defaultFilter : {};
+    let permanentDeleteData = options.permanentDeleteData ? options.permanentDeleteData : false;
     this.model = mongoose.model(modelName, this.schema, options.collectionName);
-    ParamController.call(this, this.model, modelName, logger, defaultFilter);
+    ParamController.call(this, this.model, modelName, logger, defaultFilter, permanentDeleteData);
     this.index = this._index.bind(this);
     this.aggregate = this._aggregate.bind(this);
     this.create = this._create.bind(this);

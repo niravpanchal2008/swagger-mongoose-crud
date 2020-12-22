@@ -22,7 +22,7 @@ const transactionOptions = {
  * @param {Model} model - The mongoose model to operate on
  * @param {String} [idName] - The name of the id request parameter to use
  */
-function CrudController(model, logger, defaultFilter) {
+function CrudController(model, logger, defaultFilter, permanentDeleteData) {
     // call super constructor
     BaseController.call(this, this);
 
@@ -31,6 +31,7 @@ function CrudController(model, logger, defaultFilter) {
     this.logger = logger;
     this.defaultFilter = defaultFilter ? defaultFilter : {};
     this.defaultFilter = this.FilterParse(defaultFilter);
+    this.permanentDeleteData = permanentDeleteData;
     // set id name if defined, defaults to 'id'
     this.omit = [];
     _.bindAll(this);
@@ -347,7 +348,8 @@ CrudController.prototype = {
         if (this.omit.length > 0) {
             filter = _.omit(filter, this.omit);
         }
-        filter['_metadata.deleted'] = false;
+        if(!this.permanentDeleteData)
+            filter['_metadata.deleted'] = false;
         return this.model
             .find(filter)
             .count()
@@ -394,7 +396,8 @@ CrudController.prototype = {
         if (this.omit.length) {
             filter = _.omit(filter, this.omit);
         }
-        filter['_metadata.deleted'] = false;
+        if(!this.permanentDeleteData)
+            filter['_metadata.deleted'] = false;
         if (search) {
             filter['$text'] = { '$search': search };
         }

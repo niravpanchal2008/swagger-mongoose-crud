@@ -33,7 +33,8 @@ var modelName = "Your model Name";
 var options = {
  collectionName: "name of your collection",
  logger: "your logger object",
- defaultFilter: "default filter object for all read operations"
+ defaultFilter: "default filter object for all read operations",
+ permanentDeleteData: "To be set true, when soft delete is disabled"
 }
 
 var crud = new SMCrud(schema,modelName, options);
