@@ -1,8 +1,8 @@
 // Purpose : map every key to its value
 
 var map = (req) =>
-    Object.keys(req.swagger.params).reduce((prev, curr) => {
-        prev[curr] = req.swagger.params[curr].value;
+    Object.keys(req.query).reduce((prev, curr) => {
+        prev[curr] = req.query[curr];
         return prev;
     }, {});
 
