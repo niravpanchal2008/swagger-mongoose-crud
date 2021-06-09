@@ -90,12 +90,21 @@ function createDocument(model, body, req, documents, self) {
     } else {
         args.push(body);
     }
-    let savePromise = [];
+    // let savePromise = [];
     let docIds = documents.map(doc => doc._id);
-    args.forEach(doc => {
-        savePromise.push(saveDocument(doc, req, docIds, model, self, documents));
+    let results = [];
+    return args.reduce((prev, doc) => {
+        return prev.then(async (e) => {
+            const result = await saveDocument(doc, req, docIds, model, self, documents);
+            results.push(result);
+        });
+    }, Promise.resolve(null)).then(() => {
+        return Promise.resolve(results);
     });
-    return Promise.all(savePromise);
+    // args.forEach(doc => {
+    //     savePromise.push(saveDocument(doc, req, docIds, model, self, documents));
+    // });
+    // return Promise.all(savePromise);
 }
 
 function removeDocument(doc, req, type) {
@@ -348,7 +357,7 @@ CrudController.prototype = {
         if (this.omit.length > 0) {
             filter = _.omit(filter, this.omit);
         }
-        if(!this.permanentDeleteData)
+        if (!this.permanentDeleteData)
             filter['_metadata.deleted'] = false;
         return this.model
             .find(filter)
@@ -396,7 +405,7 @@ CrudController.prototype = {
         if (this.omit.length) {
             filter = _.omit(filter, this.omit);
         }
-        if(!this.permanentDeleteData)
+        if (!this.permanentDeleteData)
             filter['_metadata.deleted'] = false;
         if (search) {
             filter['$text'] = { '$search': search };
