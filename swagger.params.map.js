@@ -24,7 +24,7 @@ var map = (req) => {
         return params
     } else {
         return Object.keys(req.swagger.params).reduce((prev, curr) => {
-            prev[curr] = req.swagger.params[curr];
+            prev[curr] = req.swagger.params[curr].value;
             return prev;
         }, {});
     }
