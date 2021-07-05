@@ -605,65 +605,83 @@ CrudController.prototype = {
         var upsert = reqParams['upsert'];
         var docIds = [];
         var body = params.map(req)[payload];
-        // var abortOnError = reqParams['abortOnError'] && Array.isArray(body);
-        var session;
         var promise = Promise.resolve([]);
-        if (upsert) {
-            if (Array.isArray(body)) {
-                docIds = body.map(doc => doc._id);
-                docIds = docIds.filter(docs => docs);
-            }
-            else if (typeof body == "object") {
-                docIds.push(body._id)
-            }
-            promise = self.model.find({ "_id": { "$in": docIds } });
+
+        // if (upsert) {
+        //     if (Array.isArray(body)) {
+        //         docIds = body.map(doc => doc._id);
+        //         docIds = docIds.filter(docs => docs);
+        //     }
+        //     else if (typeof body == "object") {
+        //         docIds.push(body._id)
+        //     }
+        //     promise = self.model.find({ "_id": { "$in": docIds } });
+        // }
+
+        let newDocuments = [];
+        if (Array.isArray(body)) {
+            newDocuments = body;
+        } else {
+            newDocuments.push(body);
         }
-        return promise
-            .then(async documents => {
-                // if (abortOnError) {
-                //     var startSession = await isTransactionSupported(self, res);
-                //     if (startSession) {
-                //         req.session = session = await self.model.startSession();
-                //         this.logger.info('Creating transaction for bulk post');
-                //         session.startTransaction(transactionOptions);
-                //     } else {
-                //         throw new Error(`Your current mongoDb version doesn't support transactions.Please updgrade mongoDb to 4.2 or above.`)
-                //     }
-                // }
-                return createDocument(self.model, body, req, documents, self)
-            })
-            .then(documents => {
-                var logObject = {
-                    'operation': 'Create',
-                    'user': req.user ? req.user.username : req.headers['masterName'],
-                    '_id': documents.filter(_d => _d.statusCode === 200).map(_d => _d.message._id),
-                    'timestamp': new Date()
-                };
-                self.logger.trace(JSON.stringify(logObject));
-                if (documents.some(_d => _d.statusCode === 400)) {
-                    if (Array.isArray(body)) {
-                        var result = documents.map(_doc => _doc.message);
-                        // if (abortOnError && session) {
-                        //     handleSession(session, true);
-                        //     return res.status(400).json(result);
-                        // }  else
-                        if ((documents.every(_d => _d.statusCode === 400))) {
-                            return res.status(400).json(result);
-                        } else {
-                            return res.status(207).json(result);
-                        }
-                    } else {
-                        return res.status(400).json(documents[0].message);
-                    }
-                } else {
-                    if (Array.isArray(body)) {
-                        // if (abortOnError && session) handleSession(session, false);
-                        return self.Okay(res, self.getResponseObject(documents.map(_d => _d.message)));
-                    } else {
-                        return self.Okay(res, self.getResponseObject(documents[0].message));
+        const results = [];
+        promise = newDocuments.reduce((prev, curr) => {
+            return prev.then(async () => {
+                let result, doc;
+                if (upsert && curr._id) {
+                    doc = await self.model.findOne({ "_id": curr._id });
+                    if (doc) {
+                        _.mergeWith(doc, curr, self._customizer);
+                        Object.keys(doc).forEach(el => doc.markModified(el));
                     }
                 }
-            })
+                if (!doc) {
+                    doc = new self.model(curr);
+                }
+                try {
+                    result = await doc.save(req);
+                    results.push({ statusCode: 200, message: result });
+                    return;
+                } catch (err) {
+                    results.push({ statusCode: 400, message: { message: err.message } });
+                    return;
+                }
+            });
+        }, Promise.resolve(null));
+
+        return promise.then(() => {
+            const documents = results;
+            var logObject = {
+                'operation': 'Create',
+                'user': req.user ? req.user.username : req.headers['masterName'],
+                '_id': documents.filter(_d => _d.statusCode === 200).map(_d => _d.message._id),
+                'timestamp': new Date()
+            };
+            self.logger.trace(JSON.stringify(logObject));
+            if (documents.some(_d => _d.statusCode === 400)) {
+                if (Array.isArray(body)) {
+                    var result = documents.map(_doc => _doc.message);
+                    // if (abortOnError && session) {
+                    //     handleSession(session, true);
+                    //     return res.status(400).json(result);
+                    // }  else
+                    if ((documents.every(_d => _d.statusCode === 400))) {
+                        return res.status(400).json(result);
+                    } else {
+                        return res.status(207).json(result);
+                    }
+                } else {
+                    return res.status(400).json(documents[0].message);
+                }
+            } else {
+                if (Array.isArray(body)) {
+                    // if (abortOnError && session) handleSession(session, false);
+                    return self.Okay(res, self.getResponseObject(documents.map(_d => _d.message)));
+                } else {
+                    return self.Okay(res, self.getResponseObject(documents[0].message));
+                }
+            }
+        })
             .catch(err => {
                 return self.Error(res, err);
             });
